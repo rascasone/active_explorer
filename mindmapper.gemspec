@@ -5,7 +5,7 @@ require 'mindmapper/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "mindmapper"
-  spec.version       = Mindmapper::VERSION
+  spec.version       = MindMapper::VERSION
   spec.authors       = ["Marek Ulicny"]
   spec.email         = ["xulicny@gmail.com"]
 
@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.10"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency 'rspec' , '>=3.0.0'
+  spec.add_development_dependency "rspec-nc"
   spec.add_development_dependency "guard"
   spec.add_development_dependency "guard-rspec"
 end

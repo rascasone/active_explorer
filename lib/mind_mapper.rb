@@ -1,5 +1,5 @@
 require "mindmapper/version"
 
-module Mindmapper
+module MindMapper
   # Your code goes here...
 end

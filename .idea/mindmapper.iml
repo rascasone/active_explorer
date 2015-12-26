@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RUBY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="PROVIDED" name="bundler (v1.10.6, RVM: ruby-1.9.3-p327 [touche2]) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="guard (v2.13.0, RVM: ruby-1.9.3-p327 [touche2]) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="guard-rspec (v4.6.4, RVM: ruby-1.9.3-p327 [touche2]) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="rake (v10.4.2, RVM: ruby-1.9.3-p327 [touche2]) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="rspec (v3.4.0, RVM: ruby-1.9.3-p327 [touche2]) [gem]" level="application" />
+  </component>
+</module>

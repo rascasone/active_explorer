@@ -1,5 +1,7 @@
 require "mindmapper/version"
 
 module MindMapper
-  # Your code goes here...
+  def generate_mindmap
+
+  end
 end

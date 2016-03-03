@@ -8,17 +8,15 @@ describe MindMapper do
   end
 
   after :each do
-    FileUtils.rm_rf GENERATED_DIRECTORY
+    # FileUtils.rm_rf GENERATED_DIRECTORY
   end
 
   it 'should export Person class to PNG' do
     file_path = File.join GENERATED_DIRECTORY, "person.png"
 
-    person = Person.new
+    person = Person.create first_name: "Marek", last_name: "Ulicny"
     person.generate_mindmap file_path
 
     expect(File).to exist(file_path), "File #{file_path} doesn't exist."
   end
-
-  it 'should '
 end

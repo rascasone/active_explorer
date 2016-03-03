@@ -39,4 +39,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "guard-rspec"
   spec.add_development_dependency 'ruby-graphviz', '~> 1.2', '>= 1.2.2'
   spec.add_development_dependency 'mysql'
+  spec.add_development_dependency 'standalone_migrations'
 end

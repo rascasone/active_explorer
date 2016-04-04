@@ -11,7 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160303202559) do
+ActiveRecord::Schema.define(version: 20160307183930) do
+
+  create_table "books", force: :cascade do |t|
+    t.integer  "person_id",  limit: 4
+    t.string   "title",      limit: 255
+    t.integer  "year",       limit: 4
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "books", ["person_id"], name: "fk_rails_e9a8c80b44", using: :btree
 
   create_table "people", force: :cascade do |t|
     t.string   "first_name", limit: 255
@@ -20,4 +30,5 @@ ActiveRecord::Schema.define(version: 20160303202559) do
     t.datetime "updated_at"
   end
 
+  add_foreign_key "books", "people"
 end

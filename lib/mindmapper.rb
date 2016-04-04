@@ -1,8 +1,8 @@
 require "mindmapper/version"
 require 'graphviz'
 
-module MindMapper
-  def generate_mindmap(file_path)
+module Mindmapper
+  def generate_mindmap(file_path:, associations: {})
     filename = file_path.split(File::SEPARATOR).last
     directory = file_path.chomp filename
 

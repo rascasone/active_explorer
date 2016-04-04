@@ -5,7 +5,7 @@ require 'mindmapper/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "mindmapper"
-  spec.version       = MindMapper::VERSION
+  spec.version       = Mindmapper::VERSION
   spec.authors       = ["Marek Ulicny"]
   spec.email         = ["xulicny@gmail.com"]
 

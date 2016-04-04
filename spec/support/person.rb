@@ -1,11 +1,5 @@
-require "./spec/support/introspection.rb"
-
 class Person < ActiveRecord::Base
-  # include Introspection
-  include MindMapper
+  include Mindmapper
 
-  # attr_accessor :first_name
-  # attr_accessor :last_name
-  #
-  # attr_accessor :books_owned
+  has_many :books
 end

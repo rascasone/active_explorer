@@ -1,4 +1,3 @@
-class Book
-  attr_accessor :title
-  attr_accessor :author
+class Book < ActiveRecord::Base
+  include Mindmapper
 end

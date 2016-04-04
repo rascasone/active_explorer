@@ -1,6 +1,6 @@
 require 'rspec'
 require 'active_record'
-require 'mind_mapper'
+require 'mindmapper'
 
 require './spec/support/person' # TODO: Load all support classes by command.
 require './spec/support/book'

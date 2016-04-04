@@ -27,7 +27,7 @@ describe Mindmapper do
     person.books.create title: 'The Warded Man', year: 2008
     person.books.create title: 'The Desert Spear', year: 2010
 
-    person.generate_mindmap file_path: file_path, associations: :books
+    person.generate_mindmap file_path: file_path, associations: [:books]
 
     expect(File).to exist(file_path), "File #{file_path} doesn't exist."
   end

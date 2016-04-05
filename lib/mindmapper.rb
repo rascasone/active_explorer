@@ -13,12 +13,17 @@ module Mindmapper
   private
 
   class Mindmap
-    def initialize(object, max_depth, associations_filter)
+    def initialize(object, max_depth, associations_filter, parent_node: nil)
       raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
+
+      return false if max_depth == 0
 
       @object = object
       @max_depth = max_depth
-      @associations = get_associtations(associations_filter)
+      @associations_filter = associations_filter
+      @associations = get_associtations
+      @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
+      @parent_node = parent_node
 
       generate_graph
     end
@@ -32,6 +37,10 @@ module Mindmapper
       @graph.output(:png => file_path)
     end
 
+    def graph
+      @graph
+    end
+
     private
 
     def create_directory(directory)
@@ -40,46 +49,44 @@ module Mindmapper
       end
     end
 
-    def get_associtations(associations_filter)
-      associations_filter.collect! { |association| association.to_s }
+    def get_associtations
+      @associations_filter.collect! { |association| association.to_s }
 
       associations = @object.class.reflections.collect do |reflection|
         reflection.second
       end
 
       associations.select! do |association|
-        associations_filter.include? association.name.to_s
+        @associations_filter.include? association.name.to_s
       end
 
       associations
     end
 
-    # Empty
-    # def generate_graph(file_path, current_depth = 0, max_depth = 3, associations = [] )
     def generate_graph
-      @graph = GraphViz.new(:G, :type => :digraph)
+      node = add_node
 
-      main_class_name = @object.class.name
-      main_attributes = @object.attributes.keys.join("\n")
-      main_values = @object.attributes.values.join("\n")
+      @graph.add_edge(@parent_node, node) if @parent_node
 
-      @main_node = @graph.add_nodes("main_class", shape: "record", label: "{<f0> #{main_class_name}|{<f1> #{main_attributes}|<f2> #{main_values}}}")
-
-      add_subnodes
+      add_subnodes node
     end
 
-    def add_subnodes
+    def add_node
+      id = @object.id
+      class_name = @object.class.name
+      attributes = @object.attributes.keys.join("\n")
+      values = @object.attributes.values.join("\n")
+
+      @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+    end
+
+    def add_subnodes(node)
       @associations.each do |association|
         models = @object.send(association.name)
 
         models.each do |model|
-          model_class_name = model.class.name
-          model_attributes = model.attributes.keys.join("\n")
-          model_values = model.attributes.values.join("\n")
-
-          model_node = @graph.add_nodes("#{model.class.name}_#{model.id}", shape: "record", label: "{<f0> #{model_class_name}|{<f1> #{model_attributes}|<f2> #{model_values}}}")
-
-          @graph.add_edges(@main_node, model_node)
+          mindmap = Mindmap.new model, @max_depth - 1, @associations_filter, parent_node: node
+          @graph = mindmap.graph
         end
       end
     end

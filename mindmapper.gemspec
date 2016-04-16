@@ -41,4 +41,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'mysql'
   spec.add_development_dependency 'standalone_migrations'
   spec.add_development_dependency 'awesome_print'
+  spec.add_development_dependency 'factory_girl'
 end

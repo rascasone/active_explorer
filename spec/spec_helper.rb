@@ -1,9 +1,12 @@
 require 'rspec'
 require 'active_record'
 require 'mindmapper'
+require 'factory_girl'
 
-require './spec/support/person' # TODO: Load all support classes by command.
-require './spec/support/book'
+require_relative 'support/factory_girl'
+
+Dir["./spec/support/models/*"].each {|file| require file }
+Dir["./spec/support/factories/*"].each {|file| require file }
 
 ActiveRecord::Base.establish_connection(
     :adapter  => 'mysql',

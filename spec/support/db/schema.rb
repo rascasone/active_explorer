@@ -13,22 +13,22 @@
 
 ActiveRecord::Schema.define(version: 20160307183930) do
 
-  create_table "books", force: :cascade do |t|
-    t.integer  "person_id",  limit: 4
-    t.string   "title",      limit: 255
-    t.integer  "year",       limit: 4
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "books", ["person_id"], name: "fk_rails_e9a8c80b44", using: :btree
-
-  create_table "people", force: :cascade do |t|
+  create_table "authors", force: :cascade do |t|
     t.string   "first_name", limit: 255
     t.string   "last_name",  limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  add_foreign_key "books", "people"
+  create_table "books", force: :cascade do |t|
+    t.integer  "author_id",  limit: 4
+    t.string   "title",      limit: 255
+    t.integer  "year",       limit: 4
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "books", ["author_id"], name: "fk_rails_53d51ce16a", using: :btree
+
+  add_foreign_key "books", "authors"
 end

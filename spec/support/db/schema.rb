@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160307183930) do
+ActiveRecord::Schema.define(version: 20160417091124) do
 
   create_table "authors", force: :cascade do |t|
     t.string   "first_name", limit: 255
@@ -30,5 +30,19 @@ ActiveRecord::Schema.define(version: 20160307183930) do
 
   add_index "books", ["author_id"], name: "fk_rails_53d51ce16a", using: :btree
 
+  create_table "reviews", force: :cascade do |t|
+    t.integer  "stars",      limit: 4
+    t.text     "text",       limit: 65535
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
+    t.integer  "book_id",    limit: 4
+    t.integer  "author_id",  limit: 4
+  end
+
+  add_index "reviews", ["author_id"], name: "index_reviews_on_author_id", using: :btree
+  add_index "reviews", ["book_id"], name: "index_reviews_on_book_id", using: :btree
+
   add_foreign_key "books", "authors"
+  add_foreign_key "reviews", "authors"
+  add_foreign_key "reviews", "books"
 end

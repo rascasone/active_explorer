@@ -11,21 +11,33 @@ describe Mindmapper do
     # FileUtils.rm_rf GENERATED_DIRECTORY
   end
 
-  let(:author) { create :author }
+  let(:author) { create :author_of_books }
 
   it 'exports simple graph' do
-    file_path = File.join GENERATED_DIRECTORY, "author_simple.png"
+    file = target_file "author_simple.png"
 
-    author.generate_mindmap file_path: file_path
+    author.generate_mindmap file_path: file
 
-    expect(File).to exist(file_path), "File #{file_path} doesn't exist."
+    expect(File).to exist(file), "File #{file} doesn't exist."
   end
 
   it 'exports multilevel graph' do
-    file_path = File.join GENERATED_DIRECTORY, "author_and_books.png"
+    file = target_file "author_and_books.png"
 
-    author.generate_mindmap file_path: file_path, associations_filter: [:books]
+    author.generate_mindmap file_path: file, associations_filter: [:books]
 
-    expect(File).to exist(file_path), "File #{file_path} doesn't exist."
+    expect(File).to exist(file), "File #{file} doesn't exist."
+  end
+
+  it 'exports multilevel graph with set limit' do
+    file = target_file "author_books_reviews.png"
+
+    author.generate_mindmap file_path: file, associations_filter: [:books, :reviews], max_depth: 2
+
+    expect(File).to exist(file), "File #{file} doesn't exist."
+  end
+
+  def target_file(name)
+    File.join GENERATED_DIRECTORY, name
   end
 end

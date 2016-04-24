@@ -13,10 +13,9 @@ module Mindmapper
   private
 
   class Mindmap
-    def initialize(object, max_depth, associations_filter, parent_node: nil)
+    def initialize(object, max_depth, associations_filter, parent_node: nil, parent_object: nil)
       raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
-
-      return false if max_depth == 0
+      raise ArgumentError, "Argument 'max_depth' must be at least 1." if max_depth < 1
 
       @object = object
       @max_depth = max_depth
@@ -24,6 +23,21 @@ module Mindmapper
       @associations = get_associtations
       @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
       @parent_node = parent_node
+      @parent_object = parent_object
+
+      # puts '---------------------------'
+      # puts "ap @max_depth"
+      # ap @max_depth
+      # puts "ap @object"
+      # ap @object
+      # puts "ap @associations"
+      # ap @associations
+      # puts "ap @parent_node"
+      # ap @parent_node
+      # puts "puts @graph.to_s"
+      # puts @graph.to_s
+
+      puts "Level: #{max_depth}, object: #{@object.class.to_s} #{@object.id}, parent: #{parent_object&.class.to_s} #{parent_object&.id}"
 
       generate_graph
     end
@@ -58,17 +72,19 @@ module Mindmapper
 
       associations.select! do |association|
         @associations_filter.include? association.name.to_s
-      end
+      end if @associations_filter.any?
 
       associations
     end
 
     def generate_graph
-      node = add_node
+      add_node
+      add_edge
+      add_subnodes
+    end
 
-      @graph.add_edge(@parent_node, node) if @parent_node
-
-      add_subnodes node
+    def add_edge
+      @graph.add_edge(@parent_node, @self_node) if @parent_node
     end
 
     def add_node
@@ -77,18 +93,37 @@ module Mindmapper
       attributes = @object.attributes.keys.join("\n")
       values = @object.attributes.values.join("\n")
 
-      @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+      @self_node = @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
     end
 
-    def add_subnodes(node)
+    def add_subnodes
       @associations.each do |association|
-        models = @object.send(association.name)
+        if association.is_a? ActiveRecord::Reflection::BelongsToReflection
+          subobject = @object.send(association.name)
 
-        models.each do |model|
-          mindmap = Mindmap.new model, @max_depth - 1, @associations_filter, parent_node: node
-          @graph = mindmap.graph
+          puts "  Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+          add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
+        else
+          subobjects = @object.send(association.name)
+
+          subobjects.each do |subobject|
+            puts "  Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+            add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
+          end
         end
       end
+    end
+
+    def add_subobject_to_graph(subobject:, node:)
+      if @max_depth > 1
+        mindmap = Mindmap.new subobject, @max_depth - 1, @associations_filter, parent_node: node, parent_object: @object
+
+        @graph = mindmap.graph
+      end
+    end
+
+    def is_parent?(object)
+      object === @parent_object
     end
   end
 end

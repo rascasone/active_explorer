@@ -8,6 +8,7 @@ module Mindmapper
 
     mindmap = Mindmap.new self, max_depth, associations_filter
     mindmap.save_to_file file_path
+    mindmap
   end
 
   private
@@ -59,7 +60,7 @@ module Mindmapper
       end
 
       associations.select! do |association|
-        @associations_filter.include? association.name.to_s
+        @associations_filter.include? association.plural_name.to_s
       end if @associations_filter.any?
 
       associations
@@ -89,13 +90,13 @@ module Mindmapper
         if is_belongs_association?(association)
           subobject = @object.send(association.name)
 
-          puts "  Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+          puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
           add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
         elsif is_has_association?(association)
           subobjects = @object.send(association.name)
 
           subobjects.each do |subobject|
-            puts "  Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+            puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
             add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
           end
         end

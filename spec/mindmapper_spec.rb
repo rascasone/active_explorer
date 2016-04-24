@@ -13,45 +13,54 @@ describe Mindmapper do
 
   let(:author) { create :author_of_books }
 
+  describe 'its basic features' do
+    it 'creates file' do
+      file = target_file("mindmap_save_test.png")
+
+      author.generate_mindmap file_path: file
+
+      expect(File).to exist(file), "File #{file} doesn't exist."
+    end
+  end
+
   describe 'its filters' do
 
     context 'when filter is empty' do
       it 'exports all objects' do
-        file = target_file "all_objects.png"
+        mindmap = author.generate_mindmap file_path: target_file("all_objects.png")
 
-        author.generate_mindmap file_path: file
-
-        expect(File).to exist(file), "File #{file} doesn't exist."
+        expect(mindmap.graph.node_count).to eq(5)
+        expect(mindmap.graph.edge_count).to eq(4)
       end
     end
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        file = target_file "author_and_books.png"
+        mindmap = author.generate_mindmap file_path: target_file("author_and_books.png"),
+                                associations_filter: [:books]
 
-        author.generate_mindmap file_path: file, associations_filter: [:books]
-
-        expect(File).to exist(file), "File #{file} doesn't exist."
+        expect(mindmap.graph.node_count).to eq(3)
+        expect(mindmap.graph.edge_count).to eq(2)
       end
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          file = target_file "author_books_reviews.png"
+          mindmap = author.generate_mindmap file_path: target_file("author_books_reviews.png"),
+                                  associations_filter: [:books, :reviews], max_depth: 3
 
-          author.generate_mindmap file_path: file, associations_filter: [:books, :reviews], max_depth: 2
-
-          expect(File).to exist(file), "File #{file} doesn't exist."
+          expect(mindmap.graph.node_count).to eq(4)
+          expect(mindmap.graph.edge_count).to eq(3)
         end
       end
     end
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        file = target_file "author_books_reviews_authors.png"
+        mindmap = author.generate_mindmap file_path: target_file("author_books_reviews_authors.png"),
+                                associations_filter: [:books, :reviews, :authors], max_depth: 10
 
-        author.generate_mindmap file_path: file, associations_filter: [:books, :reviews, :authors], max_depth: 10
-
-        expect(File).to exist(file), "File #{file} doesn't exist."
+        expect(mindmap.graph.node_count).to eq(5)
+        expect(mindmap.graph.edge_count).to eq(4)
       end
     end
 
@@ -60,4 +69,5 @@ describe Mindmapper do
   def target_file(name)
     File.join GENERATED_DIRECTORY, name
   end
+
 end

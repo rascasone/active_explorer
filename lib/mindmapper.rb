@@ -3,7 +3,7 @@ require "mindmapper/version"
 require 'graphviz'
 
 module Mindmapper
-  def generate_mindmap(file_path:, associations_filter: [], max_depth: 3)
+  def generate_mindmap(file_path:, associations_filter: [], max_depth: 5)
     raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
 
     mindmap = Mindmap.new self, max_depth, associations_filter
@@ -24,18 +24,6 @@ module Mindmapper
       @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
       @parent_node = parent_node
       @parent_object = parent_object
-
-      # puts '---------------------------'
-      # puts "ap @max_depth"
-      # ap @max_depth
-      # puts "ap @object"
-      # ap @object
-      # puts "ap @associations"
-      # ap @associations
-      # puts "ap @parent_node"
-      # ap @parent_node
-      # puts "puts @graph.to_s"
-      # puts @graph.to_s
 
       puts "Level: #{max_depth}, object: #{@object.class.to_s} #{@object.id}, parent: #{parent_object&.class.to_s} #{parent_object&.id}"
 
@@ -98,12 +86,12 @@ module Mindmapper
 
     def add_subnodes
       @associations.each do |association|
-        if association.is_a? ActiveRecord::Reflection::BelongsToReflection
+        if is_belongs_association?(association)
           subobject = @object.send(association.name)
 
           puts "  Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
           add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
-        else
+        elsif is_has_association?(association)
           subobjects = @object.send(association.name)
 
           subobjects.each do |subobject|
@@ -112,6 +100,15 @@ module Mindmapper
           end
         end
       end
+    end
+
+    def is_belongs_association?(association)
+      association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
+    end
+
+    def is_has_association?(association)
+      association.is_a?(ActiveRecord::Reflection::HasManyReflection) ||
+          association.is_a?(ActiveRecord::Reflection::HasOneReflection)
     end
 
     def add_subobject_to_graph(subobject:, node:)

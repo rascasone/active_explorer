@@ -1,0 +1,17 @@
+development:
+  adapter: mysql
+  encoding: utf8
+  database: mindmapper_dev
+  reconnect: false
+  pool: 5
+  username: root
+  password: root
+
+test:
+  adapter: mysql
+  encoding: utf8
+  database: mindmapper_test
+  reconnect: false
+  pool: 5
+  username: root
+  password: root

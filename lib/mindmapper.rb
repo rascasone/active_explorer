@@ -90,10 +90,14 @@ module Mindmapper
         if is_belongs_association?(association)
           subobject = @object.send(association.name)
 
+          next if subobject.nil?
+
           puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
           add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
         elsif is_has_association?(association)
           subobjects = @object.send(association.name)
+
+          next if subobjects.nil?
 
           subobjects.each do |subobject|
             puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"

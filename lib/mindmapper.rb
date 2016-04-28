@@ -88,16 +88,16 @@ module Mindmapper
     def add_subnodes
       @associations.each do |association|
         if is_belongs_association?(association)
-          subobject = @object.send(association.name)
+          subobject = subobjects_for(association)
 
           next if subobject.nil?
 
           puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
           add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
         elsif is_has_association?(association)
-          subobjects = @object.send(association.name)
+          subobjects = subobjects_for(association)
 
-          next if subobjects.nil?
+          next if subobjects.nil? || subobjects.empty?
 
           subobjects.each do |subobject|
             puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
@@ -105,6 +105,30 @@ module Mindmapper
           end
         end
       end
+    end
+
+    def subobjects_for(association)
+      begin
+        subobjects = @object.send(association.name)
+      rescue NameError => e
+        association_type = is_has_association?(association) ? 'has_many' : 'belongs_to'
+        add_error_node("#{e.message} in #{association_type} :#{association.name}")
+      end
+
+      defined?(subobjects) ? subobjects : nil
+    end
+
+    def add_error_node(msg)
+      id = @object.id
+      class_name = @object.class.name
+      @randomizer ||= Random.new
+      error_id = @randomizer.rand
+
+      error_node = @graph.add_node("#{class_name}_#{id}_error_#{error_id}",
+                                   shape: "record",
+                                   label: "{Error in #{class_name}(#{id}) | {#{msg}}}")
+
+      @graph.add_edge(@self_node, error_node) if @self_node
     end
 
     def is_belongs_association?(association)

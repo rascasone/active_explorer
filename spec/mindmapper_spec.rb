@@ -37,7 +37,7 @@ describe Mindmapper do
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
         mindmap = author.generate_mindmap file_path: target_file("author_and_books.png"),
-                                associations_filter: [:books]
+                                          associations_filter: [:books]
 
         expect(mindmap.graph.node_count).to eq(3)
         expect(mindmap.graph.edge_count).to eq(2)
@@ -46,7 +46,7 @@ describe Mindmapper do
       context 'and depth is set' do
         it 'exports multilevel graph' do
           mindmap = author.generate_mindmap file_path: target_file("author_books_reviews.png"),
-                                  associations_filter: [:books, :reviews], max_depth: 3
+                                            associations_filter: [:books, :reviews], max_depth: 3
 
           expect(mindmap.graph.node_count).to eq(4)
           expect(mindmap.graph.edge_count).to eq(3)
@@ -57,10 +57,30 @@ describe Mindmapper do
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
         mindmap = author.generate_mindmap file_path: target_file("author_books_reviews_authors.png"),
-                                associations_filter: [:books, :reviews, :authors], max_depth: 10
+                                          associations_filter: [:books, :reviews, :authors], max_depth: 10
 
         expect(mindmap.graph.node_count).to eq(5)
         expect(mindmap.graph.edge_count).to eq(4)
+      end
+    end
+
+  end
+
+  describe 'its error handling' do
+
+    context 'when association is incorrectly defined' do
+      let(:bad_guy) { create(:bad_guy) }
+      let(:file_name) { 'bad_guy.png' }
+
+      it 'should catch error inside' do
+        expect { bad_guy.generate_mindmap file_path: target_file(file_name) }.not_to raise_error
+      end
+
+      it 'write message to mindmap' do
+        mindmap = bad_guy.generate_mindmap file_path: target_file(file_name)
+
+        expect(mindmap.graph.node_count).to eq(2)
+        expect(mindmap.graph.edge_count).to eq(1)
       end
     end
 

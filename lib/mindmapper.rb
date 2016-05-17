@@ -35,7 +35,7 @@ module Mindmapper
       filename = file_path.split(File::SEPARATOR).last
       directory = file_path.chomp filename
 
-      create_directory directory
+      create_directory directory unless directory.empty?
 
       @graph.output(:png => file_path)
     end
@@ -47,7 +47,7 @@ module Mindmapper
     private
 
     def create_directory(directory)
-      unless File.directory? directory
+      unless directory.empty? || File.directory?(directory)
         FileUtils.mkdir_p directory
       end
     end

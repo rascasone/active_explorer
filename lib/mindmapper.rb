@@ -52,6 +52,13 @@ module Mindmapper
       end
     end
 
+    # Replace characters that conflict with DOT language (used in GraphViz).
+    # These: `{`, `}`, `<`, `>`, `|`, `\`
+    #
+    def make_safe(text)
+      text.tr('{}<>|\\', '')
+    end
+
     def get_associtations
       @associations_filter.collect! { |association| association.to_s }
 
@@ -78,9 +85,9 @@ module Mindmapper
 
     def add_node
       id = @object.id
-      class_name = @object.class.name
-      attributes = @object.attributes.keys.join("\n")
-      values = @object.attributes.values.join("\n")
+      class_name = make_safe(@object.class.name)
+      attributes = make_safe(@object.attributes.keys.join("\n"))
+      values = make_safe(@object.attributes.values.join("\n"))
 
       @self_node = @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
     end

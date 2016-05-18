@@ -25,7 +25,9 @@ describe Mindmapper do
     it 'works with unsafe strings' do
       file = target_file("unsafe_string.png")
 
-      author.books.create title: 'Unsafe Book čili Nebezpečná kniha s češtinou a divnými znaky: {}<>& These are ok: ^%$@#!():;./|+-=`[]', year: 666
+      author.books.create title: 'Nebezpečná kniha s češtinou', year: 666
+      author.books.create title: 'Filter these: {}<>', year: 1666
+      author.books.create title: 'Thwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwese are ok: /*&^%$@#!():;.|+-=`[]*/', year: 2016
       author.generate_mindmap file_path: file
 
       expect(File).to exist(file), "File #{file} doesn't exist."

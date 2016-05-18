@@ -52,6 +52,10 @@ module Mindmapper
       end
     end
 
+    def make_short(text)
+      text.length < 70 ? text : text[0..70] + " (...)"
+    end
+
     # Replace characters that conflict with DOT language (used in GraphViz).
     # These: `{`, `}`, `<`, `>`, `|`, `\`
     #
@@ -87,7 +91,7 @@ module Mindmapper
       id = @object.id
       class_name = make_safe(@object.class.name)
       attributes = make_safe(@object.attributes.keys.join("\n"))
-      values = make_safe(@object.attributes.values.join("\n"))
+      values = make_safe(@object.attributes.values.collect { |val| make_short(val.to_s) }.join("\n"))
 
       @self_node = @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
     end

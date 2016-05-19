@@ -17,17 +17,19 @@ describe Mindmapper do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.generate_mindmap.get_hash
-
-    books = overview[:subobjects]
-    reviews = books.first[:subobjects]
-    review_authors = reviews.first[:subobjects]
+    overview = author.generate_mindmap
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
     expect(overview[:attributes]['id']).to eq(author.id)
+
+    books = overview[:subobjects]
     expect(books.count).to eq(2)
+
+    reviews = books.first[:subobjects]
     expect(reviews.count).to eq(1)
+
+    review_authors = reviews.first[:subobjects]
     expect(review_authors.count).to eq(1)
   end
 
@@ -35,28 +37,29 @@ describe Mindmapper do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.generate_mindmap(associations_filter: [:books]).get_hash
+        overview = author.generate_mindmap(associations_filter: [:books])
+        books = overview[:subobjects]
 
         author.books.count.times do |i|
-          expect(overview[:subobjects][i]).not_to have_key(:subobjects)
+          expect(books[i][:subobjects]).to be_empty
         end
       end
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.generate_mindmap(associations_filter: [:books, :reviews], max_depth: 3).get_hash
+          overview = author.generate_mindmap(associations_filter: [:books, :reviews], max_depth: 3)
 
           books = overview[:subobjects]
           reviews = books.first[:subobjects]
 
-          expect(reviews.first).not_to have_key(:subobjects)
+          expect(reviews.first[:subobjects]).to be_empty
         end
       end
     end
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.generate_mindmap(associations_filter: [:books, :reviews, :authors], max_depth: 10).get_hash
+        overview = author.generate_mindmap(associations_filter: [:books, :reviews, :authors], max_depth: 10)
 
         books = overview[:subobjects]
         reviews = books.first[:subobjects]
@@ -78,7 +81,7 @@ describe Mindmapper do
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.generate_mindmap.get_hash
+        overview = bad_guy.generate_mindmap
 
         expect(overview).to have_key(:error_message)
       end

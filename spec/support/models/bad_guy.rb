@@ -1,5 +1,5 @@
 class BadGuy < ActiveRecord::Base
-  include Mindmapper
+  include ActiveExplorer
 
   has_many :bad_thoughts  # Table `bad_thoughts` does not exist on purpose.
 end

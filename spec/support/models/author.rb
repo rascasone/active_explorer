@@ -1,5 +1,5 @@
 class Author < ActiveRecord::Base
-  include Mindmapper
+  include ActiveExplorer
 
   has_many :books
   has_many :reviews

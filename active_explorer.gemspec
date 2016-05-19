@@ -1,17 +1,17 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'mindmapper/version'
+require 'active_explorer/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "mindmapper"
-  spec.version       = Mindmapper::VERSION
+  spec.name          = "active-explorer"
+  spec.version       = ActiveExplorer::VERSION
   spec.authors       = ["Marek Ulicny"]
   spec.email         = ["xulicny@gmail.com"]
 
   spec.summary       = "Automatic generation of mind maps for connected objects"
   spec.description   = "Mind maps generator for connected objects"
-  spec.homepage      = 'http://www.github.com/rascasone/mindmapper'
+  spec.homepage      = 'http://www.github.com/rascasone/active-explorer'
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or

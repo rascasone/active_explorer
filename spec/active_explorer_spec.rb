@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Mindmapper do
+describe ActiveExplorer do
 
   # TODO: In each test create desired hash and compare it with received overview.
 
@@ -17,7 +17,7 @@ describe Mindmapper do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.generate_mindmap
+    overview = author.explore
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
@@ -37,7 +37,7 @@ describe Mindmapper do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.generate_mindmap(associations_filter: [:books])
+        overview = author.explore(filter: [:books])
         books = overview[:subobjects]
 
         author.books.count.times do |i|
@@ -47,7 +47,7 @@ describe Mindmapper do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.generate_mindmap(associations_filter: [:books, :reviews], max_depth: 3)
+          overview = author.explore(filter: [:books, :reviews], max_depth: 3)
 
           books = overview[:subobjects]
           reviews = books.first[:subobjects]
@@ -59,7 +59,7 @@ describe Mindmapper do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.generate_mindmap(associations_filter: [:books, :reviews, :authors], max_depth: 10)
+        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10)
 
         books = overview[:subobjects]
         reviews = books.first[:subobjects]
@@ -77,11 +77,11 @@ describe Mindmapper do
       let(:file_name) { 'bad_guy.png' }
 
       it 'should catch error inside' do
-        expect { bad_guy.generate_mindmap }.not_to raise_error
+        expect { bad_guy.explore }.not_to raise_error
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.generate_mindmap
+        overview = bad_guy.explore
 
         expect(overview).to have_key(:error_message)
       end

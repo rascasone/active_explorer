@@ -1,7 +1,7 @@
 development:
   adapter: mysql
   encoding: utf8
-  database: mindmapper_dev
+  database: active_explorer_dev
   reconnect: false
   pool: 5
   username: root
@@ -10,7 +10,7 @@ development:
 test:
   adapter: mysql
   encoding: utf8
-  database: mindmapper_test
+  database: active_explorer_test
   reconnect: false
   pool: 5
   username: root

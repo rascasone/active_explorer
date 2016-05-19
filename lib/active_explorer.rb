@@ -1,27 +1,25 @@
 require "awesome_print" # TODO: Delete before going live.
-require "mindmapper/version"
+require "active_explorer/version"
 require 'graphviz'
 
-module Mindmapper
-  def generate_mindmap(file_path: nil, associations_filter: [], max_depth: 5)
-    raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
-
-    overview = Overview.new self, max_depth, associations_filter
+module ActiveExplorer
+  def explore(file_path: nil, filter: [], max_depth: 5)
+    exploration = Exploration.new self, max_depth, filter
     # overview.save_to_file file_path
-    overview.as_hash
+    exploration.as_hash
   end
 
   private
 
-  class Overview
-    def initialize(object, max_depth, associations_filter, parent_object: nil)
-      raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
+  class Exploration
+    def initialize(object, max_depth, filter, parent_object: nil)
+      raise TypeError, "Parameter 'associations_filter' must be Array but is #{filter.class}." unless filter.is_a? Array
       raise ArgumentError, "Argument 'max_depth' must be at least 1." if max_depth <= 0
 
       @object = object
       @max_depth = max_depth
-      @associations_filter = associations_filter.collect { |a| a.to_s }
-      @associations = associtations(@object, @associations_filter)
+      @filter = filter.collect { |a| a.to_s }
+      @associations = associtations(@object, @filter)
       @parent_object = parent_object
 
       # puts "Level: #{max_depth}, object: #{@object.class.to_s} #{@object.id}, parent: #{parent_object&.class.to_s} #{parent_object&.id}"
@@ -88,7 +86,7 @@ module Mindmapper
       lower_depth = @max_depth - 1
 
       if lower_depth >= 1
-        overview = Overview.new object, lower_depth, @associations_filter, parent_object: parent_object
+        overview = Exploration.new object, lower_depth, @filter, parent_object: parent_object
         overview.as_hash
       end
     end

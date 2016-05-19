@@ -3,18 +3,18 @@ require "mindmapper/version"
 require 'graphviz'
 
 module Mindmapper
-  def generate_mindmap(file_path:, associations_filter: [], max_depth: 5)
+  def generate_mindmap(file_path: nil, associations_filter: [], max_depth: 5)
     raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
 
-    mindmap = Mindmap.new self, max_depth, associations_filter
-    mindmap.save_to_file file_path
-    mindmap
+    overview = Overview.new self, max_depth, associations_filter
+    # overview.save_to_file file_path
+    overview
   end
 
   private
 
-  class Mindmap
-    def initialize(object, max_depth, associations_filter, parent_node: nil, parent_object: nil)
+  class Overview
+    def initialize(object, max_depth, associations_filter, parent_object: nil)
       raise TypeError, "Parameter 'associations_filter' must be Array but is #{associations_filter.class}." unless associations_filter.is_a? Array
       raise ArgumentError, "Argument 'max_depth' must be at least 1." if max_depth < 1
 
@@ -22,45 +22,78 @@ module Mindmapper
       @max_depth = max_depth
       @associations_filter = associations_filter
       @associations = get_associtations
-      @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
-      @parent_node = parent_node
       @parent_object = parent_object
+      @hash = {}
 
       puts "Level: #{max_depth}, object: #{@object.class.to_s} #{@object.id}, parent: #{parent_object&.class.to_s} #{parent_object&.id}"
 
-      generate_graph
+      generate_hash
     end
 
-    def save_to_file(file_path)
-      filename = file_path.split(File::SEPARATOR).last
-      directory = file_path.chomp filename
-
-      create_directory directory unless directory.empty?
-
-      @graph.output(:png => file_path)
-    end
-
-    def graph
-      @graph
+    def get_hash
+      @hash
     end
 
     private
 
-    def create_directory(directory)
-      unless directory.empty? || File.directory?(directory)
-        FileUtils.mkdir_p directory
+    def generate_hash
+      @hash[:class_name] = make_safe(@object.class.name)
+      @hash[:attributes] = @object.attributes
+
+      subobjects_hash = add_subobjects
+
+      @hash[:subobjects] = subobjects_hash unless subobjects_hash.empty?
+    end
+
+    def add_subobjects
+      results = []
+
+      @associations.each do |association|
+        if is_belongs_association?(association)
+          subobject = subobjects_for(association)
+
+          next if subobject.nil?
+
+          puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+          unless is_parent?(subobject)
+            hash = hash_from_object(subobject: subobject)
+            results.push hash
+          end
+        elsif is_has_association?(association)
+          subobjects = subobjects_for(association)
+
+          next if subobjects.nil? || subobjects.empty?
+
+          subobjects.each do |subobject|
+            puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
+            unless is_parent?(subobject)
+              hash = hash_from_object(subobject: subobject) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+              results.push hash
+            end
+          end
+        end
       end
+
+      results
     end
 
-    def make_short(text)
-      text.length < 70 ? text : text[0..70] + " (...)"
+    def subobjects_for(association)
+      begin
+        subobjects = @object.send(association.name)
+      rescue NameError => e
+        association_type = is_has_association?(association) ? 'has_many' : 'belongs_to'
+        add_error_hash("#{e.message} in #{association_type} :#{association.name}")
+      end
+
+      defined?(subobjects) ? subobjects : nil
     end
 
-    # Replace characters that conflict with DOT language (used in GraphViz).
-    # These: `{`, `}`, `<`, `>`, `|`, `\`
-    #
-    def make_safe(text)
-      text.tr('{}<>|\\', '')
+    def hash_from_object(subobject:)
+      if @max_depth > 1
+        # mindmap = Mindmap.new subobject, @max_depth - 1, @associations_filter, parent_object: @object
+        overview = Overview.new subobject, @max_depth - 1, @associations_filter, parent_object: @object
+        overview.get_hash
+      end
     end
 
     def get_associtations
@@ -77,69 +110,13 @@ module Mindmapper
       associations
     end
 
-    def generate_graph
-      add_node
-      add_edge
-      add_subnodes
-    end
-
-    def add_edge
-      @graph.add_edge(@parent_node, @self_node) if @parent_node
-    end
-
-    def add_node
-      id = @object.id
-      class_name = make_safe(@object.class.name)
-      attributes = make_safe(@object.attributes.keys.join("\n"))
-      values = make_safe(@object.attributes.values.collect { |val| make_short(val.to_s) }.join("\n"))
-
-      @self_node = @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
-    end
-
-    def add_subnodes
-      @associations.each do |association|
-        if is_belongs_association?(association)
-          subobject = subobjects_for(association)
-
-          next if subobject.nil?
-
-          puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
-          add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
-        elsif is_has_association?(association)
-          subobjects = subobjects_for(association)
-
-          next if subobjects.nil? || subobjects.empty?
-
-          subobjects.each do |subobject|
-            puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
-            add_subobject_to_graph(subobject: subobject, node: @self_node) unless is_parent?(subobject)
-          end
-        end
-      end
-    end
-
-    def subobjects_for(association)
-      begin
-        subobjects = @object.send(association.name)
-      rescue NameError => e
-        association_type = is_has_association?(association) ? 'has_many' : 'belongs_to'
-        add_error_node("#{e.message} in #{association_type} :#{association.name}")
-      end
-
-      defined?(subobjects) ? subobjects : nil
-    end
-
-    def add_error_node(msg)
+    def add_error_hash(message)
       id = @object.id
       class_name = @object.class.name
-      @randomizer ||= Random.new
-      error_id = @randomizer.rand
 
-      error_node = @graph.add_node("#{class_name}_#{id}_error_#{error_id}",
-                                   shape: "record",
-                                   label: "{Error in #{class_name}(#{id}) | {#{msg}}}")
-
-      @graph.add_edge(@self_node, error_node) if @self_node
+      @hash[:error_message] = "Error in #{class_name}(#{id}): #{message}"
+      @hash[:class_name] = make_safe(@object.class.name)
+      @hash[:attributes] = @object.attributes
     end
 
     def is_belongs_association?(association)
@@ -151,16 +128,19 @@ module Mindmapper
           association.is_a?(ActiveRecord::Reflection::HasOneReflection)
     end
 
-    def add_subobject_to_graph(subobject:, node:)
-      if @max_depth > 1
-        mindmap = Mindmap.new subobject, @max_depth - 1, @associations_filter, parent_node: node, parent_object: @object
-
-        @graph = mindmap.graph
-      end
-    end
-
     def is_parent?(object)
       object === @parent_object
+    end
+
+    def make_short(text)
+      text.length < 70 ? text : text[0..70] + " (...)"
+    end
+
+    # Replace characters that conflict with DOT language (used in GraphViz).
+    # These: `{`, `}`, `<`, `>`, `|`, `\`
+    #
+    def make_safe(text)
+      text.tr('{}<>|\\', '')
     end
   end
 end

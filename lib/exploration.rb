@@ -1,3 +1,5 @@
+require 'writer'
+
 module ActiveExplorer
   class Exploration
     def initialize(object, max_depth, filter, parent_object: nil)
@@ -18,8 +20,16 @@ module ActiveExplorer
       @hash[:subobjects] = subobjects_hash(@object, @associations)
     end
 
-    def as_hash
+    def to_hash
       @hash
+    end
+
+    def to_console
+      Writer.new(self).write
+    end
+
+    def to_image
+      #TODO: To be done.
     end
 
     private
@@ -75,7 +85,7 @@ module ActiveExplorer
 
       if lower_depth >= 1
         overview = Exploration.new object, lower_depth, @filter, parent_object: parent_object
-        overview.as_hash
+        overview.to_hash
       end
     end
 

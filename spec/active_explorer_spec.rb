@@ -17,7 +17,7 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.explore
+    overview = author.explore.to_hash
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
@@ -37,7 +37,7 @@ describe ActiveExplorer do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books])
+        overview = author.explore(filter: [:books]).to_hash
         books = overview[:subobjects]
 
         author.books.count.times do |i|
@@ -47,7 +47,7 @@ describe ActiveExplorer do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.explore(filter: [:books, :reviews], max_depth: 3)
+          overview = author.explore(filter: [:books, :reviews], max_depth: 3).to_hash
 
           books = overview[:subobjects]
           reviews = books.first[:subobjects]
@@ -59,7 +59,7 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10)
+        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).to_hash
 
         books = overview[:subobjects]
         reviews = books.first[:subobjects]
@@ -77,14 +77,22 @@ describe ActiveExplorer do
       let(:file_name) { 'bad_guy.png' }
 
       it 'should catch error inside' do
-        expect { bad_guy.explore }.not_to raise_error
+        expect { bad_guy.explore.to_hash }.not_to raise_error
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.explore
+        overview = bad_guy.explore.to_hash
 
         expect(overview).to have_key(:error_message)
       end
+    end
+
+  end
+
+  describe 'output' do
+
+    it 'outputs to console' do
+      author.explore.to_console
     end
 
   end

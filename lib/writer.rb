@@ -14,17 +14,21 @@ module ActiveExplorer
 
     def write_object(object, level)
       class_name = object[:class_name]
-      id = object[:attributes]['id']
+      id = object[:attributes][:id]
       attributes = object[:attributes]
       error_message = object[:error_message]
 
-      attributes.delete 'id'
+      attributes.delete :id
 
       margin = '    ' * level
       margin[-2] = '->' if level > 0
 
       puts "#{margin}#{class_name}(#{id}) #{attributes}"
-      puts "#{margin}(#{error_message})" if error_message.present?
+
+      if error_message.present?
+        margin = '    ' * level
+        puts "#{margin}(#{error_message})" if error_message.present?
+      end
 
       write_objects object[:subobjects], level + 1
     end

@@ -4,6 +4,8 @@ describe ActiveExplorer do
 
   # TODO: In each test create desired hash and compare it with received overview.
 
+  # TODO: Add test model with has_one association.
+
   GENERATED_DIRECTORY = 'spec/files/generated'
 
   before :all do
@@ -21,7 +23,7 @@ describe ActiveExplorer do
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
-    expect(overview[:attributes]['id']).to eq(author.id)
+    expect(overview[:attributes][:id]).to eq(author.id)
 
     books = overview[:subobjects]
     expect(books.count).to eq(2)
@@ -97,7 +99,7 @@ describe ActiveExplorer do
 
       output = capture_output { exploration.to_console }
 
-      expect(output).to include("Author(#{hash[:attributes]['id']})")
+      expect(output).to include("Author(#{hash[:attributes][:id]})")
     end
 
     it 'outputs multiline' do
@@ -106,7 +108,7 @@ describe ActiveExplorer do
 
       output = capture_output { exploration.to_console }
 
-      expect(output).to include("  -> Book(#{hash[:attributes]['id']})")
+      expect(output).to include("  -> Book(#{hash[:attributes][:id]})")
     end
 
     it 'outputs error' do

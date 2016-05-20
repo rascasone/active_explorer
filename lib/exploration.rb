@@ -12,10 +12,8 @@ module ActiveExplorer
       @associations = associtations(@object, @filter)
       @parent_object = parent_object
 
-      # puts "Level: #{max_depth}, object: #{@object.class.to_s} #{@object.id}, parent: #{parent_object&.class.to_s} #{parent_object&.id}"
-
       @hash = { class_name: make_safe(@object.class.name),
-                attributes: @object.attributes }
+                attributes: @object.attributes.symbolize_keys }
 
       @hash[:subobjects] = subobjects_hash(@object, @associations)
     end
@@ -100,12 +98,10 @@ module ActiveExplorer
     end
 
     def add_error_hash(message)
-      id = @object.id
-      class_name = @object.class.name
-
-      @hash[:error_message] = "Error in #{class_name}(#{id}): #{message}"
       @hash[:class_name] = make_safe(@object.class.name)
-      @hash[:attributes] = @object.attributes
+      @hash[:attributes] = @object.attributes.symbolize_keys
+
+      @hash[:error_message] = "Error in #{@object.class.name}(#{@object.id}): #{message}"
     end
 
     def make_short(text)

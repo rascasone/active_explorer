@@ -43,11 +43,9 @@ module ActiveExplorer
 
           next if subobject.nil?
 
-          # puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
-
           unless is_parent?(subobject)
             hash = hash_from(subobject, parent_object: object)
-            results.push hash
+            results.push hash unless hash.nil?
           end
         elsif is_has_many_association?(association) || is_has_one_association?(association)
           subobjects = subobjects(object, association)
@@ -56,11 +54,9 @@ module ActiveExplorer
 
           subobjects.each do |subobject|
 
-            # puts "  @object: #{@object.class.to_s}, @subobject: #{subobject.class.to_s} Is parent?(#{subobject.class.to_s} #{subobject.id})#{is_parent?(subobject)}"
-
             unless is_parent?(subobject)
               hash = hash_from(subobject, parent_object: object) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
-              results.push hash
+              results.push hash unless hash.nil?
             end
           end
         end
@@ -77,7 +73,7 @@ module ActiveExplorer
         add_error_hash("#{e.message} in #{association_type} :#{association.name}")
       end
 
-      defined?(subobjects) ? subobjects : nil
+      defined?(subobjects) && subobjects.present? ? subobjects : nil
     end
 
     def hash_from(object, parent_object:)

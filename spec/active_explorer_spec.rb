@@ -89,10 +89,32 @@ describe ActiveExplorer do
 
   end
 
-  describe 'output' do
+  describe 'output to console' do
 
-    it 'outputs to console' do
-      author.explore.to_console
+    it 'outputs first line' do
+      exploration = author.explore
+      hash = author.explore.to_hash
+
+      output = capture_output { exploration.to_console }
+
+      expect(output).to include("Author(#{hash[:attributes]['id']})")
+    end
+
+    it 'outputs multiline' do
+      exploration = author.explore
+      hash = author.explore.to_hash[:subobjects].first
+
+      output = capture_output { exploration.to_console }
+
+      expect(output).to include("  -> Book(#{hash[:attributes]['id']})")
+    end
+
+    it 'outputs error' do
+      bad_guy = create(:bad_guy)
+
+      output = capture_output { bad_guy.explore.to_console }
+
+      expect(output).to include("Error in BadGuy")
     end
 
   end
@@ -168,5 +190,16 @@ describe ActiveExplorer do
   # def target_file(name)
   #   File.join GENERATED_DIRECTORY, name
   # end
+
+  def capture_output
+    begin
+      old_stdout = $stdout
+      $stdout = StringIO.new('','w')
+      yield
+      $stdout.string
+    ensure
+      $stdout = old_stdout
+    end
+  end
 
 end

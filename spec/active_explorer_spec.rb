@@ -4,6 +4,8 @@ describe ActiveExplorer do
 
   # TODO: In each test create desired hash and compare it with received overview.
 
+  # TODO: Add test model with has_one association.
+
   GENERATED_DIRECTORY = 'spec/files/generated'
 
   before :all do
@@ -17,11 +19,11 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.explore
+    overview = author.explore.get_hash
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
-    expect(overview[:attributes]['id']).to eq(author.id)
+    expect(overview[:attributes][:id]).to eq(author.id)
 
     books = overview[:subobjects]
     expect(books.count).to eq(2)
@@ -37,7 +39,7 @@ describe ActiveExplorer do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books])
+        overview = author.explore(filter: [:books]).get_hash
         books = overview[:subobjects]
 
         author.books.count.times do |i|
@@ -47,7 +49,7 @@ describe ActiveExplorer do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.explore(filter: [:books, :reviews], max_depth: 3)
+          overview = author.explore(filter: [:books, :reviews], max_depth: 3).get_hash
 
           books = overview[:subobjects]
           reviews = books.first[:subobjects]
@@ -59,7 +61,7 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10)
+        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).get_hash
 
         books = overview[:subobjects]
         reviews = books.first[:subobjects]
@@ -77,14 +79,44 @@ describe ActiveExplorer do
       let(:file_name) { 'bad_guy.png' }
 
       it 'should catch error inside' do
-        expect { bad_guy.explore }.not_to raise_error
+        expect { bad_guy.explore.get_hash }.not_to raise_error
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.explore
+        overview = bad_guy.explore.get_hash
 
         expect(overview).to have_key(:error_message)
       end
+    end
+
+  end
+
+  describe 'output to console' do
+
+    it 'outputs first line' do
+      exploration = author.explore
+      hash = author.explore.get_hash
+
+      output = capture_output { exploration.to_console }
+
+      expect(output).to include("Author(#{hash[:attributes][:id]})")
+    end
+
+    it 'outputs multiline' do
+      exploration = author.explore
+      hash = author.explore.get_hash[:subobjects].first
+
+      output = capture_output { exploration.to_console }
+
+      expect(output).to include("  -> Book(#{hash[:attributes][:id]})")
+    end
+
+    it 'outputs error' do
+      bad_guy = create(:bad_guy)
+
+      output = capture_output { bad_guy.explore.to_console }
+
+      expect(output).to include("Error in BadGuy")
     end
 
   end
@@ -160,5 +192,16 @@ describe ActiveExplorer do
   # def target_file(name)
   #   File.join GENERATED_DIRECTORY, name
   # end
+
+  def capture_output
+    begin
+      old_stdout = $stdout
+      $stdout = StringIO.new('','w')
+      yield
+      $stdout.string
+    ensure
+      $stdout = old_stdout
+    end
+  end
 
 end

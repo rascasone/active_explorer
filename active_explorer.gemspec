@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'active_explorer/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "active-explorer"
+  spec.name          = "active_explorer"
   spec.version       = ActiveExplorer::VERSION
   spec.authors       = ["Marek Ulicny"]
   spec.email         = ["xulicny@gmail.com"]

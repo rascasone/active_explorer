@@ -6,7 +6,7 @@ module ActiveExplorer
 
     def write
       puts "\n"
-      write_object(@exploration.to_hash, 0)
+      write_object(@exploration.get_hash, 0)
       puts "\n"
     end
 

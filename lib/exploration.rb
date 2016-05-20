@@ -18,7 +18,7 @@ module ActiveExplorer
       @hash[:subobjects] = subobjects_hash(@object, @associations)
     end
 
-    def to_hash
+    def get_hash
       @hash
     end
 
@@ -79,7 +79,7 @@ module ActiveExplorer
 
       if lower_depth >= 1
         overview = Exploration.new object, lower_depth, @filter, parent_object: parent_object
-        overview.to_hash
+        overview.get_hash
       end
     end
 

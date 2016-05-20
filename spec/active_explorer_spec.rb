@@ -19,7 +19,7 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.explore.to_hash
+    overview = author.explore.get_hash
 
     expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
     expect(overview[:class_name]).to eq(author.class.name)
@@ -39,7 +39,7 @@ describe ActiveExplorer do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books]).to_hash
+        overview = author.explore(filter: [:books]).get_hash
         books = overview[:subobjects]
 
         author.books.count.times do |i|
@@ -49,7 +49,7 @@ describe ActiveExplorer do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.explore(filter: [:books, :reviews], max_depth: 3).to_hash
+          overview = author.explore(filter: [:books, :reviews], max_depth: 3).get_hash
 
           books = overview[:subobjects]
           reviews = books.first[:subobjects]
@@ -61,7 +61,7 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).to_hash
+        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).get_hash
 
         books = overview[:subobjects]
         reviews = books.first[:subobjects]
@@ -79,11 +79,11 @@ describe ActiveExplorer do
       let(:file_name) { 'bad_guy.png' }
 
       it 'should catch error inside' do
-        expect { bad_guy.explore.to_hash }.not_to raise_error
+        expect { bad_guy.explore.get_hash }.not_to raise_error
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.explore.to_hash
+        overview = bad_guy.explore.get_hash
 
         expect(overview).to have_key(:error_message)
       end
@@ -95,7 +95,7 @@ describe ActiveExplorer do
 
     it 'outputs first line' do
       exploration = author.explore
-      hash = author.explore.to_hash
+      hash = author.explore.get_hash
 
       output = capture_output { exploration.to_console }
 
@@ -104,7 +104,7 @@ describe ActiveExplorer do
 
     it 'outputs multiline' do
       exploration = author.explore
-      hash = author.explore.to_hash[:subobjects].first
+      hash = author.explore.get_hash[:subobjects].first
 
       output = capture_output { exploration.to_console }
 

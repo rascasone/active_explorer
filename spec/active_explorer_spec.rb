@@ -121,17 +121,17 @@ describe ActiveExplorer do
 
   end
 
-  #
-  # describe 'graphviz export' do
-  #   describe 'its basic features' do
-  #     it 'creates file' do
-  #       file = target_file("mindmap_save_test.png")
-  #
-  #       author.generate_mindmap file_path: file
-  #
-  #       expect(File).to exist(file), "File #{file} doesn't exist."
-  #     end
-  #
+
+  describe 'output to image' do
+    describe 'its basic features' do
+      it 'creates file' do
+        file = target_file("mindmap_save_test.png")
+
+        author.explore.to_image file
+
+        expect(File).to exist(file), "File #{file} doesn't exist."
+      end
+
   #     it 'works with unsafe strings' do
   #       file = target_file("unsafe_string.png")
   #
@@ -142,8 +142,8 @@ describe ActiveExplorer do
   #
   #       expect(File).to exist(file), "File #{file} doesn't exist."
   #     end
-  #   end
-  #
+    end
+
   #   describe 'its filters' do
   #
   #     context 'when filter is empty' do
@@ -184,14 +184,14 @@ describe ActiveExplorer do
   #         expect(mindmap.graph.edge_count).to eq(4)
   #       end
   #     end
-  #
-  #   end
+
+    end
   #
   # end
   #
-  # def target_file(name)
-  #   File.join GENERATED_DIRECTORY, name
-  # end
+  def target_file(name)
+    File.join GENERATED_DIRECTORY, name
+  end
 
   def capture_output
     begin

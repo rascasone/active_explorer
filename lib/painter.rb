@@ -3,30 +3,51 @@ module ActiveExplorer
     def initialize(exploration, file_path)
       @exploration = exploration
       @file_path = file_path
+      @graph = GraphViz.new(:G, :type => :digraph)
     end
 
     def paint
-      paint_hash(@exploration.get_hash)
+      paint_object @exploration.get_hash, @graph, nil
+      save_to_file
+      @graph
     end
 
     private
 
-    def paint_hash(hash)
+    def paint_object(hash, graph, parent_node)
+      node = add_node hash, graph
+      add_edge(graph, parent_node, node) unless parent_node.nil?
+
+      paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].empty?
+    end
+
+    def paint_subobjects(graph, parent_node, subhashes)
+      subhashes.each do |hash|
+        paint_object hash, graph, parent_node
+      end
+    end
+
+    def add_node(hash, graph)
+      id = hash[:attributes][:id]
+      class_name = make_safe(hash[:class_name])
+      attributes = make_safe(hash[:attributes].keys.join("\n"))
+      values = make_safe(hash[:attributes].values.collect { |val| make_short(val.to_s) }.join("\n"))
+
+      graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+    end
+
+    def add_edge(graph, parent_node, node)
+      graph.add_edge(parent_node, node)
+    end
+
+    def save_to_file
       filename = @file_path.split(File::SEPARATOR).last
       directory = @file_path.chomp filename
 
       create_directory directory unless directory.empty?
 
-
-
-      # @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
-      # @graph = parent_node ? parent_node.root_graph : GraphViz.new(:G, :type => :digraph)
-
-
-      # @graph.output(:png => file_path)
+      @graph.output(:png => @file_path)
     end
-
-    private
 
     def create_directory(directory)
       unless directory.empty? || File.directory?(directory)
@@ -34,45 +55,15 @@ module ActiveExplorer
       end
     end
 
-
-    def add_edge
-      @graph.add_edge(@parent_node, @self_node) if @parent_node
+    def make_short(text)
+      text.length < 70 ? text : text[0..70] + " (...)"
     end
 
-    def add_node
-      id = @object.id
-      class_name = make_safe(@object.class.name)
-      attributes = make_safe(@object.attributes.keys.join("\n"))
-      values = make_safe(@object.attributes.values.collect { |val| make_short(val.to_s) }.join("\n"))
-
-      @self_node = @graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
-    end
-
-    # def write_object(object, level)
-    #   class_name = object[:class_name]
-    #   id = object[:attributes][:id]
-    #   attributes = object[:attributes]
-    #   error_message = object[:error_message]
+    # Replace characters that conflict with DOT language (used in GraphViz).
+    # These: `{`, `}`, `<`, `>`, `|`, `\`
     #
-    #   attributes.delete :id
-    #
-    #   margin = '    ' * level
-    #   margin[-2] = '->' if level > 0
-    #
-    #   puts "#{margin}#{class_name}(#{id}) #{attributes}"
-    #
-    #   if error_message.present?
-    #     margin = '    ' * level
-    #     puts "#{margin}(#{error_message})" if error_message.present?
-    #   end
-    #
-    #   write_objects object[:subobjects], level + 1
-    # end
-
-    def write_objects(objects, level)
-      objects.each do |object|
-        write_object object, level
-      end
+    def make_safe(text)
+      text.tr('{}<>|\\', '')
     end
   end
 end

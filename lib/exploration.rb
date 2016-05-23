@@ -28,7 +28,8 @@ module ActiveExplorer
     end
 
     def to_image(file)
-      Painter.new(self, file).paint
+      painter = Painter.new(self, file).paint
+
     end
 
     private

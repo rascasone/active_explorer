@@ -45,6 +45,8 @@ module ActiveExplorer
 
           unless is_parent?(subobject)
             hash = hash_from(subobject, parent_object: object)
+            hash[:association] = 'belongs_to'
+
             results.push hash unless hash.nil?
           end
         elsif is_has_many_association?(association) || is_has_one_association?(association)
@@ -56,6 +58,8 @@ module ActiveExplorer
 
             unless is_parent?(subobject)
               hash = hash_from(subobject, parent_object: object) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+              hash[:association] = is_has_many_association?(association) ? 'has_many' : 'has_one'
+
               results.push hash unless hash.nil?
             end
           end

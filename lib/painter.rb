@@ -15,8 +15,8 @@ module ActiveExplorer
     private
 
     def paint_object(hash, graph, parent_node)
-      node = add_node hash, graph
-      add_edge(graph, parent_node, node) unless parent_node.nil?
+      node = add_node(hash, graph)
+      add_edge(graph, parent_node, node, "  " + hash[:association]) unless parent_node.nil?
 
       paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].empty?
     end
@@ -36,8 +36,12 @@ module ActiveExplorer
       graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
     end
 
-    def add_edge(graph, parent_node, node)
-      graph.add_edge(parent_node, node)
+    def add_edge(graph, parent_node, node, association)
+      if association.include? "belongs_to"
+        graph.add_edge(node, parent_node)
+      else
+        graph.add_edge(parent_node, node)
+      end
     end
 
     def save_to_file

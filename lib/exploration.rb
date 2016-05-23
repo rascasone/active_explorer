@@ -36,6 +36,7 @@ module ActiveExplorer
 
     def subobjects_hash(object, associations)
       results = []
+      lower_depth = @max_depth - 1
 
       associations.each do |association|
         if is_belongs_to_association?(association)
@@ -44,10 +45,12 @@ module ActiveExplorer
           next if subobject.nil?
 
           unless is_parent?(subobject)
-            hash = hash_from(subobject, parent_object: object)
-            hash[:association] = 'belongs_to'
+            if @max_depth > 1
+              hash = hash_from(subobject, parent_object: object)
+              hash[:association] = 'belongs_to'
 
-            results.push hash unless hash.nil?
+              results.push hash
+            end
           end
         elsif is_has_many_association?(association) || is_has_one_association?(association)
           subobjects = subobjects(object, association)
@@ -57,10 +60,12 @@ module ActiveExplorer
           subobjects.each do |subobject|
 
             unless is_parent?(subobject)
-              hash = hash_from(subobject, parent_object: object) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
-              hash[:association] = is_has_many_association?(association) ? 'has_many' : 'has_one'
+              if @max_depth > 1
+                hash = hash_from(subobject, parent_object: object) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+                hash[:association] = is_has_many_association?(association) ? 'has_many' : 'has_one'
 
-              results.push hash unless hash.nil?
+                results.push hash
+              end
             end
           end
         end
@@ -81,12 +86,8 @@ module ActiveExplorer
     end
 
     def hash_from(object, parent_object:)
-      lower_depth = @max_depth - 1
-
-      if lower_depth >= 1
-        overview = Exploration.new object, lower_depth, @filter, parent_object: parent_object
-        overview.get_hash
-      end
+      overview = Exploration.new object, @max_depth - 1, @filter, parent_object: parent_object
+      overview.get_hash
     end
 
     def associtations(object, filter)

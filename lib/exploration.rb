@@ -1,4 +1,5 @@
 require 'writer'
+require 'painter'
 
 module ActiveExplorer
   class Exploration
@@ -26,8 +27,9 @@ module ActiveExplorer
       Writer.new(self).write
     end
 
-    def to_image
-      #TODO: To be done.
+    def to_image(file)
+      painter = Painter.new(self, file).paint
+
     end
 
     private

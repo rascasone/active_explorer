@@ -37,7 +37,11 @@ module ActiveExplorer
     end
 
     def add_edge(graph, parent_node, node, association)
-      graph.add_edge(parent_node, node, label: association)
+      if association.include? "belongs_to"
+        graph.add_edge(node, parent_node)
+      else
+        graph.add_edge(parent_node, node)
+      end
     end
 
     def save_to_file

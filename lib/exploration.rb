@@ -75,14 +75,13 @@ module ActiveExplorer
     end
 
     def subobjects(object, association)
-      begin
-        subobjects = object.send(association.name)
-      rescue NameError => e
-        association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'
-        add_error_hash("#{e.message} in #{association_type} :#{association.name}")
-      end
-
+      subobjects = object.send(association.name)
       defined?(subobjects) && subobjects.present? ? subobjects : nil
+
+    rescue NameError, ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
+      association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'
+      add_error_hash("#{e.message} in #{association_type} :#{association.name}")
+      nil
     end
 
     def hash_from(object, parent_object:)

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe ActiveExplorer do
 
-  # TODO: In each test create desired hash and compare it with received overview.
+  # TODO: In each test create desired hash and compare it with received exploration_hash.
 
   # TODO: Add test model with has_one association.
 
@@ -19,13 +19,13 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    overview = author.explore.get_hash
+    exploration_hash = author.explore.get_hash
 
-    expect(overview.keys).to eq([:class_name, :attributes, :subobjects])
-    expect(overview[:class_name]).to eq(author.class.name)
-    expect(overview[:attributes][:id]).to eq(author.id)
+    expect(exploration_hash.keys).to eq([:class_name, :attributes, :subobjects])
+    expect(exploration_hash[:class_name]).to eq(author.class.name)
+    expect(exploration_hash[:attributes][:id]).to eq(author.id)
 
-    books = overview[:subobjects]
+    books = exploration_hash[:subobjects]
     expect(books.count).to eq(2)
 
     reviews = books.first[:subobjects]
@@ -34,13 +34,13 @@ describe ActiveExplorer do
     review_authors = reviews.first[:subobjects]
     expect(review_authors.count).to eq(1)
   end
-
+  
   describe 'filters' do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books]).get_hash
-        books = overview[:subobjects]
+        exploration_hash = author.explore(filter: [:books]).get_hash
+        books = exploration_hash[:subobjects]
 
         author.books.count.times do |i|
           expect(books[i][:subobjects]).to be_empty
@@ -49,9 +49,9 @@ describe ActiveExplorer do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          overview = author.explore(filter: [:books, :reviews], max_depth: 3).get_hash
+          exploration_hash = author.explore(filter: [:books, :reviews], max_depth: 3).get_hash
 
-          books = overview[:subobjects]
+          books = exploration_hash[:subobjects]
           reviews = books.first[:subobjects]
 
           expect(reviews.first[:subobjects]).to be_empty
@@ -61,9 +61,9 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        overview = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).get_hash
+        exploration_hash = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).get_hash
 
-        books = overview[:subobjects]
+        books = exploration_hash[:subobjects]
         reviews = books.first[:subobjects]
 
         expect(reviews.first).to have_key(:subobjects)
@@ -83,9 +83,9 @@ describe ActiveExplorer do
       end
 
       it 'write message to mindmap' do
-        overview = bad_guy.explore.get_hash
+        exploration_hash = bad_guy.explore.get_hash
 
-        expect(overview).to have_key(:error_message)
+        expect(exploration_hash).to have_key(:error_message)
       end
     end
 
@@ -94,19 +94,19 @@ describe ActiveExplorer do
   describe 'output to console' do
 
     it 'outputs first line' do
-      exploration = author.explore
+      exploration_hash = author.explore
       hash = author.explore.get_hash
 
-      output = capture_output { exploration.to_console }
+      output = capture_output { exploration_hash.to_console }
 
       expect(output).to include("Author(#{hash[:attributes][:id]})")
     end
 
     it 'outputs multiline' do
-      exploration = author.explore
+      exploration_hash = author.explore
       hash = author.explore.get_hash[:subobjects].first
 
-      output = capture_output { exploration.to_console }
+      output = capture_output { exploration_hash.to_console }
 
       expect(output).to include("  -> Book(#{hash[:attributes][:id]})")
     end

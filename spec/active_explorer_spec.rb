@@ -19,7 +19,10 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    exploration_hash = author.explore.get_hash
+    exploration = author.explore
+    exploration.to_console
+
+    exploration_hash = exploration.get_hash
 
     expect(exploration_hash.keys).to eq([:class_name, :attributes, :subobjects])
     expect(exploration_hash[:class_name]).to eq(author.class.name)
@@ -33,6 +36,17 @@ describe ActiveExplorer do
 
     review_authors = reviews.first[:subobjects]
     expect(review_authors.count).to eq(1)
+  end
+
+  it 'exports only direct predecessors and ancestors' do
+    exploration = author.books.first.explore
+    exploration.to_console
+
+    exploration_hash = exploration.get_hash
+
+    expect(exploration_hash[:subobjects].count).to eq(2)
+    expect(exploration_hash[:subobjects].first[:subobjects]).to be_empty
+    expect(exploration_hash[:subobjects].second[:subobjects]).not_to be_empty
   end
   
   describe 'filters' do

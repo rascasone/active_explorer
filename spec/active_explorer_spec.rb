@@ -19,7 +19,7 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    exploration = author.explore association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES
+    exploration = author.explore association_filter: [:all]
     exploration.to_console
 
     exploration_hash = exploration.get_hash
@@ -140,7 +140,7 @@ describe ActiveExplorer do
       it 'creates file' do
         file = target_file("mindmap_save_test.png")
 
-        author.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image file
+        author.explore(association_filter: [:all]).to_image file
 
         expect(File).to exist(file), "File #{file} doesn't exist."
       end
@@ -162,7 +162,7 @@ describe ActiveExplorer do
 
       context 'when filter is empty' do
         it 'exports all objects' do
-          graph = author.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image target_file("all_objects.png")
+          graph = author.explore(association_filter: [:all]).to_image target_file("all_objects.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)
@@ -171,7 +171,7 @@ describe ActiveExplorer do
 
       context 'when filter covers only some models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image target_file("author_and_books.png")
+          graph = author.explore(object_filter: [:books], association_filter: [:all]).to_image target_file("author_and_books.png")
 
           expect(graph.node_count).to eq(3)
           expect(graph.edge_count).to eq(2)
@@ -179,7 +179,7 @@ describe ActiveExplorer do
 
         context 'and depth is set' do
           it 'exports multilevel graph' do
-            graph = author.explore(object_filter: [:books, :reviews], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES, depth: 3).to_image target_file("author_books_reviews.png")
+            graph = author.explore(object_filter: [:books, :reviews], association_filter: [:all], depth: 3).to_image target_file("author_books_reviews.png")
 
             expect(graph.node_count).to eq(4)
             expect(graph.edge_count).to eq(3)
@@ -189,7 +189,7 @@ describe ActiveExplorer do
 
       context 'when filter covers all models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books, :reviews, :authors], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES, depth: 10).to_image target_file("author_books_reviews_authors.png")
+          graph = author.explore(object_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).to_image target_file("author_books_reviews_authors.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)
@@ -200,14 +200,14 @@ describe ActiveExplorer do
 
     describe 'its options' do
       it 'exports centralized style' do
-        graph = author.books.first.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image(target_file("origin_as_root_on.png"), origin_as_root: true)
+        graph = author.books.first.explore(association_filter: [:all]).to_image(target_file("origin_as_root_on.png"), origin_as_root: true)
 
         expect(graph.node_count).to eq(5)
         expect(graph.edge_count).to eq(4)
       end
 
       it 'exports non-centralized style' do
-        graph = author.books.first.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image(target_file("origin_as_root_off.png"), origin_as_root: false)
+        graph = author.books.first.explore(association_filter: [:all]).to_image(target_file("origin_as_root_off.png"), origin_as_root: false)
 
         expect(graph.node_count).to eq(5)
         expect(graph.edge_count).to eq(4)

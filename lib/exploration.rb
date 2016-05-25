@@ -3,7 +3,7 @@ require 'painter'
 
 module ActiveExplorer
   class Exploration
-    ASSOCIATION_FILTER_VALUES = [:has_many, :has_one, :belongs_to]  #TODO: Consider adding `:all` (or `:any`) value to explicitly say to use all associations on every object.
+    ASSOCIATION_FILTER_VALUES = [:has_many, :has_one, :belongs_to, :all]
 
     # Creates new exploration and generates exploration hash.
     #
@@ -21,7 +21,7 @@ module ActiveExplorer
       @object = object
       @depth = depth
       @object_filter = object_filter.collect { |a| a.to_s }
-      @association_filter = association_filter
+      @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
       @associations = associtations(@object, @object_filter)
       @parent_object = parent_object
 

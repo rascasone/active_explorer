@@ -6,7 +6,8 @@ module ActiveExplorer
       @graph = GraphViz.new(:G, :type => :digraph)
     end
 
-    def paint
+    def paint(origin_as_root: false)
+      @centralized = origin_as_root
       paint_object @exploration.get_hash, @graph, nil
       save_to_file
       @graph
@@ -15,7 +16,9 @@ module ActiveExplorer
     private
 
     def paint_object(hash, graph, parent_node)
-      node = add_node(hash, graph)
+      style = parent_node.nil? ? :origin : nil
+
+      node = add_node(hash, graph, style: style)
       add_edge(graph, parent_node, node, "  " + hash[:association]) unless parent_node.nil?
 
       paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].empty?
@@ -27,20 +30,29 @@ module ActiveExplorer
       end
     end
 
-    def add_node(hash, graph)
+    def add_node(hash, graph, style: nil)
       id = hash[:attributes][:id]
       class_name = make_safe(hash[:class_name])
       attributes = make_safe(hash[:attributes].keys.join("\n"))
       values = make_safe(hash[:attributes].values.collect { |val| make_short(val.to_s) }.join("\n"))
 
-      graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+      if style == :origin
+        # graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}", style: 'filled', color: 'yellow')
+        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}", style: 'filled', fillcolor: 'yellow')
+      else
+        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+      end
     end
 
     def add_edge(graph, parent_node, node, association)
-      if association.include? "belongs_to"
-        graph.add_edge(node, parent_node)
+      if @centralized
+        graph.add_edge(parent_node, node, label: association.include?('belongs_to') ? ' belongs to' : ' has')
       else
-        graph.add_edge(parent_node, node)
+        if association.include? "belongs_to"
+          graph.add_edge(node, parent_node)
+        else
+          graph.add_edge(parent_node, node)
+        end
       end
     end
 

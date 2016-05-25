@@ -4,7 +4,7 @@ require 'graphviz'
 require 'exploration'
 
 module ActiveExplorer
-  def explore(filter: [], max_depth: 5)
-    Exploration.new self, max_depth, filter
+  def explore(object_filter: [], association_filter: [], depth: 5)
+    Exploration.new self, depth: depth, object_filter: object_filter, association_filter: association_filter
   end
 end

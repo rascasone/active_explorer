@@ -5,14 +5,15 @@ module ActiveExplorer
     end
 
     def write
-      puts "\n"
-      write_object(@exploration.get_hash, 0)
-      puts "\n"
+      exploration_hash = @exploration.get_hash
+
+      puts "\nExplored #{exploration_hash[:class_name]}(#{exploration_hash[:attributes][:id]}):\n\n"
+      write_object(exploration_hash)
     end
 
     private
 
-    def write_object(object, level)
+    def write_object(object, level = 0)
       class_name = object[:class_name]
       id = object[:attributes][:id]
       attributes = object[:attributes]

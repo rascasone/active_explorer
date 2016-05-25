@@ -3,7 +3,7 @@ require 'painter'
 
 module ActiveExplorer
   class Exploration
-    ASSOCIATION_FILTER_VALUES = [:has_many, :has_one, :belongs_to]
+    ASSOCIATION_FILTER_VALUES = [:has_many, :has_one, :belongs_to]  #TODO: Consider adding `:all` (or `:any`) value to explicitly say to use all associations on every object.
 
     # Creates new exploration and generates exploration hash.
     #
@@ -39,8 +39,8 @@ module ActiveExplorer
       Writer.new(self).write
     end
 
-    def to_image(file)
-      Painter.new(self, file).paint
+    def to_image(file, origin_as_root: false)
+      Painter.new(self, file).paint(origin_as_root: origin_as_root)
     end
 
     private

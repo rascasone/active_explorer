@@ -140,7 +140,7 @@ describe ActiveExplorer do
       it 'creates file' do
         file = target_file("mindmap_save_test.png")
 
-        author.explore.to_image file
+        author.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image file
 
         expect(File).to exist(file), "File #{file} doesn't exist."
       end
@@ -196,6 +196,22 @@ describe ActiveExplorer do
         end
       end
 
+    end
+
+    describe 'its options' do
+      it 'exports centralized style' do
+        graph = author.books.first.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image(target_file("origin_as_root_on.png"), origin_as_root: true)
+
+        expect(graph.node_count).to eq(5)
+        expect(graph.edge_count).to eq(4)
+      end
+
+      it 'exports non-centralized style' do
+        graph = author.books.first.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image(target_file("origin_as_root_off.png"), origin_as_root: false)
+
+        expect(graph.node_count).to eq(5)
+        expect(graph.edge_count).to eq(4)
+      end
     end
 
   end

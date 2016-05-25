@@ -3,14 +3,26 @@ require 'painter'
 
 module ActiveExplorer
   class Exploration
-    def initialize(object, max_depth, filter, parent_object: nil)
-      raise TypeError, "Parameter 'associations_filter' must be Array but is #{filter.class}." unless filter.is_a? Array
-      raise ArgumentError, "Argument 'max_depth' must be at least 1." if max_depth <= 0
+    ASSOCIATION_FILTER_VALUES = [:has_many, :has_one, :belongs_to]
+
+    # Creates new exploration and generates exploration hash.
+    #
+    # @param association_filter [Array] Values of array: `:has_many`, `:has_one`, `:belongs_to`. When empty
+    #   then it "follows previous association" (i.e. uses `:belongs_to` when previous assoc. was `:belongs_to` and
+    #   uses `:has_xxx` when previous assoc. was `:has_xxx`). To always follow all associations you must specify
+    #   all associations (e.g. uses `ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES` as a value).
+    #
+    def initialize(object, depth: 10, object_filter: [], association_filter: [], parent_object: nil)
+      raise TypeError, "Parameter 'object_filter' must be Array but is #{object_filter.class}." unless object_filter.is_a? Array
+      raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
+      raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
+      raise ArgumentError, "Argument 'max_depth' must be at least 1." if depth <= 0
 
       @object = object
-      @max_depth = max_depth
-      @filter = filter.collect { |a| a.to_s }
-      @associations = associtations(@object, @filter)
+      @depth = depth
+      @object_filter = object_filter.collect { |a| a.to_s }
+      @association_filter = association_filter
+      @associations = associtations(@object, @object_filter)
       @parent_object = parent_object
 
       @hash = { class_name: make_safe(@object.class.name),
@@ -37,17 +49,21 @@ module ActiveExplorer
       results = []
 
       associations.each do |association|
+        association_type = association_type(association)
+
+        next unless @association_filter.empty? || @association_filter.include?(association_type)
+
         if is_belongs_to_association?(association)
           subobject = subobjects_from_association(object, association)
 
           next if subobject.nil?
 
           unless is_parent?(subobject)
-            if @max_depth > 1
-              exploration = explore(subobject, parent_object: object)
+            if @depth > 1
+              exploration = explore(subobject, parent_object: object, association_type: association_type)
 
               hash = exploration.get_hash
-              hash[:association] = 'belongs_to'
+              hash[:association] = association_type.to_s
 
               results.push hash
             end
@@ -60,11 +76,11 @@ module ActiveExplorer
           subobjects.each do |subobject|
 
             unless is_parent?(subobject)
-              if @max_depth > 1
-                exploration = explore(subobject, parent_object: object)# TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+              if @depth > 1
+                exploration = explore(subobject, parent_object: object, association_type: association_type) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
 
                 hash = exploration.get_hash
-                hash[:association] = is_has_many_association?(association) ? 'has_many' : 'has_one'
+                hash[:association] = association_type.to_s
 
                 results.push hash
               end
@@ -86,8 +102,16 @@ module ActiveExplorer
       nil
     end
 
-    def explore(object, parent_object:)
-      Exploration.new object, @max_depth - 1, @filter, parent_object: parent_object
+    def explore(object, parent_object:, association_type:)
+      association_filter = if @association_filter.any?
+                             @association_filter
+                           elsif association_type == :belongs_to
+                             [:belongs_to]
+                           else
+                             [:has_many, :has_one]
+                           end
+
+      Exploration.new object, depth: @depth - 1, object_filter: @object_filter, association_filter: association_filter, parent_object: parent_object
     end
 
     def associtations(object, filter)
@@ -136,6 +160,16 @@ module ActiveExplorer
 
     def is_parent?(object)
       object === @parent_object
+    end
+
+    def association_type(association)
+      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
+        :has_many
+      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
+        :has_one
+      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
+        :belongs_to
+      end
     end
   end
 end

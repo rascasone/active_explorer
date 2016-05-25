@@ -8,9 +8,9 @@ describe ActiveExplorer do
 
   GENERATED_DIRECTORY = 'spec/files/generated'
 
-  before :all do
-    FileUtils.rm_rf GENERATED_DIRECTORY
-  end
+  # before :all do
+  #   FileUtils.rm_rf GENERATED_DIRECTORY
+  # end
 
   # after :each do
   #   FileUtils.rm_rf GENERATED_DIRECTORY
@@ -19,7 +19,7 @@ describe ActiveExplorer do
   let(:author) { create :author_of_books }
 
   it 'exports all objects' do
-    exploration = author.explore
+    exploration = author.explore association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES
     exploration.to_console
 
     exploration_hash = exploration.get_hash
@@ -46,14 +46,14 @@ describe ActiveExplorer do
 
     expect(exploration_hash[:subobjects].count).to eq(2)
     expect(exploration_hash[:subobjects].first[:subobjects]).to be_empty
-    expect(exploration_hash[:subobjects].second[:subobjects]).not_to be_empty
+    expect(exploration_hash[:subobjects].second[:subobjects]).to be_empty
   end
-  
+
   describe 'filters' do
 
     context 'when filter covers only some models' do
       it 'exports multilevel graph' do
-        exploration_hash = author.explore(filter: [:books]).get_hash
+        exploration_hash = author.explore(object_filter: [:books]).get_hash
         books = exploration_hash[:subobjects]
 
         author.books.count.times do |i|
@@ -63,7 +63,7 @@ describe ActiveExplorer do
 
       context 'and depth is set' do
         it 'exports multilevel graph' do
-          exploration_hash = author.explore(filter: [:books, :reviews], max_depth: 3).get_hash
+          exploration_hash = author.explore(object_filter: [:books, :reviews], depth: 3).get_hash
 
           books = exploration_hash[:subobjects]
           reviews = books.first[:subobjects]
@@ -75,7 +75,7 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        exploration_hash = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).get_hash
+        exploration_hash = author.explore(object_filter: [:books, :reviews, :authors], depth: 10).get_hash
 
         books = exploration_hash[:subobjects]
         reviews = books.first[:subobjects]
@@ -162,7 +162,7 @@ describe ActiveExplorer do
 
       context 'when filter is empty' do
         it 'exports all objects' do
-          graph = author.explore.to_image target_file("all_objects.png")
+          graph = author.explore(association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image target_file("all_objects.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)
@@ -171,7 +171,7 @@ describe ActiveExplorer do
 
       context 'when filter covers only some models' do
         it 'exports multilevel graph' do
-          graph = author.explore(filter: [:books]).to_image target_file("author_and_books.png")
+          graph = author.explore(object_filter: [:books], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES).to_image target_file("author_and_books.png")
 
           expect(graph.node_count).to eq(3)
           expect(graph.edge_count).to eq(2)
@@ -179,7 +179,7 @@ describe ActiveExplorer do
 
         context 'and depth is set' do
           it 'exports multilevel graph' do
-            graph = author.explore(filter: [:books, :reviews], max_depth: 3).to_image target_file("author_books_reviews.png")
+            graph = author.explore(object_filter: [:books, :reviews], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES, depth: 3).to_image target_file("author_books_reviews.png")
 
             expect(graph.node_count).to eq(4)
             expect(graph.edge_count).to eq(3)
@@ -189,7 +189,7 @@ describe ActiveExplorer do
 
       context 'when filter covers all models' do
         it 'exports multilevel graph' do
-          graph = author.explore(filter: [:books, :reviews, :authors], max_depth: 10).to_image target_file("author_books_reviews_authors.png")
+          graph = author.explore(object_filter: [:books, :reviews, :authors], association_filter: ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES, depth: 10).to_image target_file("author_books_reviews_authors.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)
@@ -207,7 +207,7 @@ describe ActiveExplorer do
   def capture_output
     begin
       old_stdout = $stdout
-      $stdout = StringIO.new('','w')
+      $stdout = StringIO.new('', 'w')
       yield
       $stdout.string
     ensure

@@ -122,7 +122,7 @@ describe ActiveExplorer do
 
       output = capture_output { exploration_hash.to_console }
 
-      expect(output).to include("  -> Book(#{hash[:attributes][:id]})")
+      expect(output).to include("  -> has Book(#{hash[:attributes][:id]})")
     end
 
     it 'outputs error' do

@@ -22,7 +22,11 @@ module ActiveExplorer
       attributes.delete :id
 
       margin = '    ' * level
-      margin[-2] = '->' if level > 0
+
+      if level > 0
+        margin[-2] = '->'
+        margin += object[:assocation] == :belongs_to ? 'belongs to' : 'has '
+      end
 
       puts "#{margin}#{class_name}(#{id}) #{attributes}"
 

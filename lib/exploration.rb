@@ -12,7 +12,7 @@ module ActiveExplorer
     #   uses `:has_xxx` when previous assoc. was `:has_xxx`). To always follow all associations you must specify
     #   all associations (e.g. uses `ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES` as a value).
     #
-    def initialize(object, depth: 10, object_filter: [], association_filter: [], parent_object: nil)
+    def initialize(object, depth: 5, object_filter: [], association_filter: [], parent_object: nil)
       raise TypeError, "Parameter 'object_filter' must be Array but is #{object_filter.class}." unless object_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?

@@ -28,32 +28,32 @@ module ActiveExplorer
     end
 
     def to_image(file)
-      painter = Painter.new(self, file).paint
-
+      Painter.new(self, file).paint
     end
 
     private
 
     def subobjects_hash(object, associations)
       results = []
-      lower_depth = @max_depth - 1
 
       associations.each do |association|
         if is_belongs_to_association?(association)
-          subobject = subobjects(object, association)
+          subobject = subobjects_from_association(object, association)
 
           next if subobject.nil?
 
           unless is_parent?(subobject)
             if @max_depth > 1
-              hash = hash_from(subobject, parent_object: object)
+              exploration = explore(subobject, parent_object: object)
+
+              hash = exploration.get_hash
               hash[:association] = 'belongs_to'
 
               results.push hash
             end
           end
         elsif is_has_many_association?(association) || is_has_one_association?(association)
-          subobjects = subobjects(object, association)
+          subobjects = subobjects_from_association(object, association)
 
           next if subobjects.nil? || subobjects.empty?
 
@@ -61,7 +61,9 @@ module ActiveExplorer
 
             unless is_parent?(subobject)
               if @max_depth > 1
-                hash = hash_from(subobject, parent_object: object) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+                exploration = explore(subobject, parent_object: object)# TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
+
+                hash = exploration.get_hash
                 hash[:association] = is_has_many_association?(association) ? 'has_many' : 'has_one'
 
                 results.push hash
@@ -74,7 +76,7 @@ module ActiveExplorer
       results
     end
 
-    def subobjects(object, association)
+    def subobjects_from_association(object, association)
       subobjects = object.send(association.name)
       defined?(subobjects) && subobjects.present? ? subobjects : nil
 
@@ -84,9 +86,8 @@ module ActiveExplorer
       nil
     end
 
-    def hash_from(object, parent_object:)
-      overview = Exploration.new object, @max_depth - 1, @filter, parent_object: parent_object
-      overview.get_hash
+    def explore(object, parent_object:)
+      Exploration.new object, @max_depth - 1, @filter, parent_object: parent_object
     end
 
     def associtations(object, filter)

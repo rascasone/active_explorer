@@ -13,6 +13,7 @@ end
 def ex(object, object_filter: [], association_filter: [], depth: 5)
   exploration = ActiveExplorer::Exploration.new object, depth: depth, object_filter: object_filter, association_filter: association_filter
   exploration.to_console
+  nil
 end
 
 # Explore object and print output to image file.
@@ -23,4 +24,5 @@ def exf(object, file_name = nil, object_filter: [], association_filter: [], dept
 
   exploration = ActiveExplorer::Exploration.new object, depth: depth, object_filter: object_filter, association_filter: association_filter
   exploration.to_image file
+  nil
 end

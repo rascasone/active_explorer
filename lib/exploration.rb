@@ -19,7 +19,7 @@ module ActiveExplorer
     #     - `:show` - Shows these classes, ignores at all other classes.
     #     - `:hide` - Hides these classes and continues to children, shows all other classes.
     #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
-    #
+    #   Use plural form (e.g. `books`).
     def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
       raise TypeError, "Parameter 'object_filter' must be Array but is #{class_filter.class}." unless class_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
@@ -30,7 +30,7 @@ module ActiveExplorer
       @depth = depth
       @class_filter = class_filter.collect { |a| a.to_s }
       @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
-      @associations = associtations(@object, @class_filter)
+      @associations = associtations(@object, @class_filter, @association_filter)
       @parent_object = parent_object
 
       @hash = { class_name: make_safe(@object.class.name),
@@ -59,8 +59,6 @@ module ActiveExplorer
       associations.each do |association|
         association_type = association_type(association)
 
-        next unless @association_filter.empty? || @association_filter.include?(association_type)
-
         if is_belongs_to_association?(association)
           subobject = subobjects_from_association(object, association)
 
@@ -71,7 +69,7 @@ module ActiveExplorer
               exploration = explore(subobject, parent_object: object, association_type: association_type)
 
               hash = exploration.get_hash
-              hash[:association] = association_type.to_s
+              hash[:association] = association_type
 
               results.push hash
             end
@@ -88,7 +86,7 @@ module ActiveExplorer
                 exploration = explore(subobject, parent_object: object, association_type: association_type) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
 
                 hash = exploration.get_hash
-                hash[:association] = association_type.to_s
+                hash[:association] = association_type
 
                 results.push hash
               end
@@ -122,14 +120,20 @@ module ActiveExplorer
       Exploration.new object, depth: @depth - 1, class_filter: @class_filter, association_filter: association_filter, parent_object: parent_object
     end
 
-    def associtations(object, filter)
+    def associtations(object, class_filter, association_filter)
       associations = object.class.reflections.collect do |reflection|
         reflection.second
       end
 
-      if filter.any?
+      if association_filter.any? && !association_filter.include?(:all)
         associations.select! do |association|
-          filter.include? association.plural_name.to_s
+          association_filter.include? association_type(association)
+        end
+      end
+
+      if class_filter.any?
+        associations.select! do |association|
+          class_filter.include? association.plural_name.to_s
         end
       end
 

@@ -49,6 +49,26 @@ describe ActiveExplorer do
     expect(exploration_hash[:subobjects].second[:subobjects]).to be_empty
   end
 
+  describe 'object parameters' do
+    it 'has class_name' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:class_name)
+    end
+
+    it 'has attributes' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:attributes)
+    end
+
+    it 'has subobjects' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:subobjects)
+    end
+  end
+
   describe 'filters' do
 
     describe 'class filter' do

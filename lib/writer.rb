@@ -26,7 +26,7 @@ module ActiveExplorer
 
       if level > 0
         margin[-2] = '->'
-        margin += object[:assocation] == :belongs_to ? 'belongs to' : 'has '
+        margin += object[:association] == :belongs_to ? 'belongs to ' : 'has '
       end
 
       puts "#{margin}#{class_name}(#{id}) #{attributes}"

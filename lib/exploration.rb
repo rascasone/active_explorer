@@ -37,10 +37,12 @@ module ActiveExplorer
 
     def to_console
       Writer.new(self).write
+      nil
     end
 
     def to_image(file, origin_as_root: false)
       Painter.new(self, file).paint(origin_as_root: origin_as_root)
+      nil
     end
 
     private

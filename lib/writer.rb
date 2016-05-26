@@ -9,6 +9,7 @@ module ActiveExplorer
 
       puts "\nExplored #{exploration_hash[:class_name]}(#{exploration_hash[:attributes][:id]}):\n\n"
       write_object(exploration_hash)
+      puts "\n"
     end
 
     private

@@ -52,8 +52,17 @@ describe ActiveExplorer do
   describe 'filters' do
 
     context 'when filter covers only some models' do
-      it 'exports multilevel graph' do
-        exploration_hash = author.explore(object_filter: [:books]).get_hash
+      it 'show only books' do
+        exploration_hash = author.explore(class_filter: [:books]).get_hash
+        books = exploration_hash[:subobjects]
+
+        author.books.count.times do |i|
+          expect(books[i][:subobjects]).to be_empty
+        end
+      end
+
+      it 'show only books (alternative notation)' do
+        exploration_hash = author.explore(class_filter: { show: [:books] }).get_hash
         books = exploration_hash[:subobjects]
 
         author.books.count.times do |i|
@@ -62,8 +71,8 @@ describe ActiveExplorer do
       end
 
       context 'and depth is set' do
-        it 'exports multilevel graph' do
-          exploration_hash = author.explore(object_filter: [:books, :reviews], depth: 3).get_hash
+        it 'shows books and reviews' do
+          exploration_hash = author.explore(class_filter: [:books, :reviews], depth: 3).get_hash
 
           books = exploration_hash[:subobjects]
           reviews = books.first[:subobjects]
@@ -75,7 +84,7 @@ describe ActiveExplorer do
 
     context 'when filter covers all models' do
       it 'exports multilevel graph' do
-        exploration_hash = author.explore(object_filter: [:books, :reviews, :authors], depth: 10).get_hash
+        exploration_hash = author.explore(class_filter: [:books, :reviews, :authors], depth: 10).get_hash
 
         books = exploration_hash[:subobjects]
         reviews = books.first[:subobjects]
@@ -171,7 +180,7 @@ describe ActiveExplorer do
 
       context 'when filter covers only some models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books], association_filter: [:all]).to_image target_file("author_and_books.png")
+          graph = author.explore(class_filter: [:books], association_filter: [:all]).to_image target_file("author_and_books.png")
 
           expect(graph.node_count).to eq(3)
           expect(graph.edge_count).to eq(2)
@@ -179,7 +188,7 @@ describe ActiveExplorer do
 
         context 'and depth is set' do
           it 'exports multilevel graph' do
-            graph = author.explore(object_filter: [:books, :reviews], association_filter: [:all], depth: 3).to_image target_file("author_books_reviews.png")
+            graph = author.explore(class_filter: [:books, :reviews], association_filter: [:all], depth: 3).to_image target_file("author_books_reviews.png")
 
             expect(graph.node_count).to eq(4)
             expect(graph.edge_count).to eq(3)
@@ -189,7 +198,7 @@ describe ActiveExplorer do
 
       context 'when filter covers all models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).to_image target_file("author_books_reviews_authors.png")
+          graph = author.explore(class_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).to_image target_file("author_books_reviews_authors.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)

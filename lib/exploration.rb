@@ -7,22 +7,30 @@ module ActiveExplorer
 
     # Creates new exploration and generates exploration hash.
     #
-    # @param association_filter [Array] Values of array: `:has_many`, `:has_one`, `:belongs_to`. When empty
-    #   then it "follows previous association" (i.e. uses `:belongs_to` when previous assoc. was `:belongs_to` and
+    # @param association_filter [Array]
+    #   Values of array: `:has_many`, `:has_one`, `:belongs_to`, `:all`.
+    #   When empty then it "follows previous association" (i.e. uses `:belongs_to` when previous assoc. was `:belongs_to` and
     #   uses `:has_xxx` when previous assoc. was `:has_xxx`). To always follow all associations you must specify
     #   all associations (e.g. uses `ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES` as a value).
     #
-    def initialize(object, depth: 5, object_filter: [], association_filter: [], parent_object: nil)
-      raise TypeError, "Parameter 'object_filter' must be Array but is #{object_filter.class}." unless object_filter.is_a? Array
+    # @param class_filter [Array or Hash]
+    #   If Array is used then it means to show only those classes in Array.
+    #   When Hash is used then it can have these keys:
+    #     - `:show` - Shows these classes, ignores at all other classes.
+    #     - `:hide` - Hides these classes and continues to children, shows all other classes.
+    #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
+    #
+    def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
+      raise TypeError, "Parameter 'object_filter' must be Array but is #{class_filter.class}." unless class_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
       raise ArgumentError, "Argument 'max_depth' must be at least 1." if depth <= 0
 
       @object = object
       @depth = depth
-      @object_filter = object_filter.collect { |a| a.to_s }
+      @class_filter = class_filter.collect { |a| a.to_s }
       @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
-      @associations = associtations(@object, @object_filter)
+      @associations = associtations(@object, @class_filter)
       @parent_object = parent_object
 
       @hash = { class_name: make_safe(@object.class.name),
@@ -111,7 +119,7 @@ module ActiveExplorer
                              [:has_many, :has_one]
                            end
 
-      Exploration.new object, depth: @depth - 1, object_filter: @object_filter, association_filter: association_filter, parent_object: parent_object
+      Exploration.new object, depth: @depth - 1, class_filter: @class_filter, association_filter: association_filter, parent_object: parent_object
     end
 
     def associtations(object, filter)

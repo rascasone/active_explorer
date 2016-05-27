@@ -17,7 +17,6 @@ module ActiveExplorer
     #   If Array is used then it means to show only those classes in Array.
     #   When Hash is used then it can have these keys:
     #     - `:show` - Shows these classes, ignores at all other classes.
-    #     - `:hide` - Hides these classes and continues to children, shows all other classes.
     #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
     #   Use plural form (e.g. `books`).
     def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
@@ -32,7 +31,7 @@ module ActiveExplorer
 
       @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
 
-      [:show, :hide, :ignore].each do |group|
+      [:show, :ignore].each do |group|
         @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
       end
 
@@ -63,14 +62,12 @@ module ActiveExplorer
       return [] if @depth == 0
 
       associations.each_with_object([]) do |association, results|
-        association_type = association_type(association)
-
-        case association_type
+        case association_type(association)
           when :belongs_to
             subobject = subobjects_from_association(object, association)
 
             if subobject.present?
-              results.push subobject_hash(association_type, object, subobject) unless is_parent?(subobject)
+              results.push subobject_hash(association, object, subobject) unless is_parent?(subobject)
             end
 
           when :has_many, :has_one
@@ -78,14 +75,16 @@ module ActiveExplorer
 
             if subobjects.present?
               subobjects.each do |subobject|
-                results.push subobject_hash(association_type, object, subobject) unless is_parent?(subobject)
+                results.push subobject_hash(association, object, subobject) unless is_parent?(subobject)
               end
             end
         end
       end
     end
 
-    def subobject_hash(association_type, object, subobject)
+    def subobject_hash(association, object, subobject)
+      association_type = association_type(association)
+
       exploration = explore(subobject, parent_object: object, association_type: association_type)
 
       hash = exploration.get_hash
@@ -127,13 +126,13 @@ module ActiveExplorer
       end
 
       if class_filter.any?
-        if class_filter[:show].any? || class_filter[:hide].any?
+        if class_filter[:show].any?
           associations.select! do |association|
-            (class_filter[:show].include? association.plural_name.to_s) || (class_filter[:hide].include? association.plural_name.to_s)
+            should_show?(association)
           end
         elsif class_filter[:ignore].any?
           associations.reject! do |association|
-            class_filter[:ignore].include? association.plural_name.to_s
+            should_ignore?(association)
           end
         end
       end
@@ -148,6 +147,16 @@ module ActiveExplorer
       @hash[:error_message] = "Error in #{@object.class.name}(#{@object.id}): #{message}"
     end
 
+    def association_type(association)
+      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
+        :has_many
+      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
+        :has_one
+      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
+        :belongs_to
+      end
+    end
+
     def make_short(text)
       text.length < 70 ? text : text[0..70] + " (...)"
     end
@@ -157,6 +166,10 @@ module ActiveExplorer
     #
     def make_safe(text)
       text.tr('{}<>|\\', '')
+    end
+
+    def each_val_to_s(array)
+      array.collect { |a| a.to_s }
     end
 
     def is_belongs_to_association?(association)
@@ -175,18 +188,12 @@ module ActiveExplorer
       object === @parent_object
     end
 
-    def association_type(association)
-      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
-        :has_many
-      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
-        :has_one
-      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
-        :belongs_to
-      end
+    def should_show?(association)
+      @class_filter[:show].include? association.plural_name.to_s
     end
 
-    def each_val_to_s(array)
-      array.collect { |a| a.to_s }
+    def should_ignore?(association)
+      @class_filter[:ignore].include? association.plural_name.to_s
     end
   end
 end

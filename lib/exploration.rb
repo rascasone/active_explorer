@@ -21,17 +21,23 @@ module ActiveExplorer
     #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
     #   Use plural form (e.g. `books`).
     def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
-      raise TypeError, "Parameter 'object_filter' must be Array but is #{class_filter.class}." unless class_filter.is_a? Array
+      raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.is_a?(Array) || class_filter.is_a?(Hash)
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
       raise ArgumentError, "Argument 'max_depth' must be at least 1." if depth <= 0
 
       @object = object
       @depth = depth
-      @class_filter = class_filter.collect { |a| a.to_s }
+      @parent_object = parent_object
+
+      @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
+
+      [:show, :hide, :ignore].each do |group|
+        @class_filter[group] = each_val_to_s(@class_filter[group]) unless @class_filter[group].nil?
+      end
+
       @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
       @associations = associtations(@object, @class_filter, @association_filter)
-      @parent_object = parent_object
 
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: @object.attributes.symbolize_keys }
@@ -121,8 +127,10 @@ module ActiveExplorer
       end
 
       if class_filter.any?
-        associations.select! do |association|
-          class_filter.include? association.plural_name.to_s
+        if class_filter.key?(:show) && class_filter[:show].any?
+          associations.select! do |association|
+            class_filter[:show].include? association.plural_name.to_s
+          end
         end
       end
 
@@ -171,6 +179,10 @@ module ActiveExplorer
       elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
         :belongs_to
       end
+    end
+
+    def each_val_to_s(array)
+      array.collect { |a| a.to_s }
     end
   end
 end

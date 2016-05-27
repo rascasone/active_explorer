@@ -77,6 +77,8 @@ describe ActiveExplorer do
           exploration_hash = author.explore(class_filter: [:books]).get_hash
           books = exploration_hash[:subobjects]
 
+          expect(books).not_to be_empty
+
           author.books.count.times do |i|
             expect(books[i][:subobjects]).to be_empty
           end
@@ -85,6 +87,8 @@ describe ActiveExplorer do
         it 'show only books (alternative notation)' do
           exploration_hash = author.explore(class_filter: { show: [:books] }).get_hash
           books = exploration_hash[:subobjects]
+
+          expect(books).not_to be_empty
 
           author.books.count.times do |i|
             expect(books[i][:subobjects]).to be_empty
@@ -96,7 +100,10 @@ describe ActiveExplorer do
             exploration_hash = author.explore(class_filter: [:books, :reviews], depth: 3).get_hash
 
             books = exploration_hash[:subobjects]
+            expect(books).not_to be_empty
+
             reviews = books.first[:subobjects]
+            expect(reviews).not_to be_empty
 
             expect(reviews.first[:subobjects]).to be_empty
           end

@@ -54,48 +54,37 @@ module ActiveExplorer
     private
 
     def subobjects_hash(object, associations)
-      results = []
+      return [] if @depth == 0
 
-      associations.each do |association|
+      associations.each_with_object([]) do |association, results|
         association_type = association_type(association)
 
-        if is_belongs_to_association?(association)
-          subobject = subobjects_from_association(object, association)
+        case association_type
+          when :belongs_to
+            subobject = subobjects_from_association(object, association)
 
-          next if subobject.nil?
-
-          unless is_parent?(subobject)
-            if @depth > 1
-              exploration = explore(subobject, parent_object: object, association_type: association_type)
-
-              hash = exploration.get_hash
-              hash[:association] = association_type
-
-              results.push hash
+            if subobject.present?
+              results.push subobject_hash(association_type, object, subobject) unless is_parent?(subobject)
             end
-          end
-        elsif is_has_many_association?(association) || is_has_one_association?(association)
-          subobjects = subobjects_from_association(object, association)
 
-          next if subobjects.nil? || subobjects.empty?
+          when :has_many, :has_one
+            subobjects = subobjects_from_association(object, association)
 
-          subobjects.each do |subobject|
-
-            unless is_parent?(subobject)
-              if @depth > 1
-                exploration = explore(subobject, parent_object: object, association_type: association_type) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
-
-                hash = exploration.get_hash
-                hash[:association] = association_type
-
-                results.push hash
+            if subobjects.present?
+              subobjects.each do |subobject|
+                results.push subobject_hash(association_type, object, subobject) unless is_parent?(subobject)
               end
             end
-          end
         end
       end
+    end
 
-      results
+    def subobject_hash(association_type, object, subobject)
+      exploration = explore(subobject, parent_object: object, association_type: association_type)
+
+      hash = exploration.get_hash
+      hash[:association] = association_type
+      hash
     end
 
     def subobjects_from_association(object, association)

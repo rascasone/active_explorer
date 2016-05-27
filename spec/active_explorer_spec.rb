@@ -20,8 +20,6 @@ describe ActiveExplorer do
 
   it 'exports all objects' do
     exploration = author.explore association_filter: [:all]
-    exploration.to_console
-
     exploration_hash = exploration.get_hash
 
     expect(exploration_hash.keys).to eq([:class_name, :attributes, :subobjects])
@@ -40,8 +38,6 @@ describe ActiveExplorer do
 
   it 'exports only direct predecessors and ancestors' do
     exploration = author.books.first.explore
-    exploration.to_console
-
     exploration_hash = exploration.get_hash
 
     expect(exploration_hash[:subobjects].count).to eq(2)
@@ -86,6 +82,17 @@ describe ActiveExplorer do
 
         it 'show only books (alternative notation)' do
           exploration_hash = author.explore(class_filter: { show: [:books] }).get_hash
+          books = exploration_hash[:subobjects]
+
+          expect(books).not_to be_empty
+
+          author.books.count.times do |i|
+            expect(books[i][:subobjects]).to be_empty
+          end
+        end
+
+        it 'ignores reviews' do
+          exploration_hash = author.explore(class_filter: { ignore: [:reviews] }).get_hash
           books = exploration_hash[:subobjects]
 
           expect(books).not_to be_empty

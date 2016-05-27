@@ -33,7 +33,7 @@ module ActiveExplorer
       @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
 
       [:show, :hide, :ignore].each do |group|
-        @class_filter[group] = each_val_to_s(@class_filter[group]) unless @class_filter[group].nil?
+        @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
       end
 
       @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
@@ -127,9 +127,13 @@ module ActiveExplorer
       end
 
       if class_filter.any?
-        if class_filter.key?(:show) && class_filter[:show].any?
+        if class_filter[:show].any? || class_filter[:hide].any?
           associations.select! do |association|
-            class_filter[:show].include? association.plural_name.to_s
+            (class_filter[:show].include? association.plural_name.to_s) || (class_filter[:hide].include? association.plural_name.to_s)
+          end
+        elsif class_filter[:ignore].any?
+          associations.reject! do |association|
+            class_filter[:ignore].include? association.plural_name.to_s
           end
         end
       end

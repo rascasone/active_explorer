@@ -23,7 +23,7 @@ module ActiveExplorer
     # @param depth [Integer]
     #   How deep into the subobjects should the explorere go. Depth 1 is only direct children. Depth 0 returns no children.
     #
-    def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
+    def initialize(object, depth: 5, class_filter: [], attribute_filter: [], association_filter: [], parent_object: nil)
       raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.is_a?(Array) || class_filter.is_a?(Hash)
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
@@ -32,8 +32,10 @@ module ActiveExplorer
       @depth = depth
       @parent_object = parent_object
 
+      @attribute_filter = attribute_filter
+
       @hash = { class_name: make_safe(@object.class.name),
-                attributes: @object.attributes.symbolize_keys }
+                attributes: attributes }
 
       unless @depth.zero?
         @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
@@ -47,6 +49,18 @@ module ActiveExplorer
 
         subobject_hash = subobjects_hash(@object, @associations)
         @hash[:subobjects] = subobject_hash unless subobject_hash.empty?
+      end
+    end
+
+    def attributes
+      return @object.attributes.symbolize_keys if @attribute_filter.empty?
+
+      filter = @attribute_filter[@object.class.name.downcase.pluralize.to_sym]
+
+      if filter
+        @object.attributes.symbolize_keys.select { |key| filter.include?(key) }
+      else
+        @object.attributes.symbolize_keys
       end
     end
 
@@ -118,6 +132,7 @@ module ActiveExplorer
       Exploration.new object,
                       depth: @depth - 1,
                       class_filter: @class_filter,
+                      attribute_filter: @attribute_filter,
                       association_filter: association_filter,
                       parent_object: parent_object
     end
@@ -150,7 +165,7 @@ module ActiveExplorer
 
     def add_error_hash(message)
       @hash[:class_name] = make_safe(@object.class.name)
-      @hash[:attributes] = @object.attributes.symbolize_keys
+      @hash[:attributes] = attributes
 
       @hash[:error_message] = "Error in #{@object.class.name}(#{@object.id}): #{message}"
     end

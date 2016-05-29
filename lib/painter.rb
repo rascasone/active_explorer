@@ -19,9 +19,9 @@ module ActiveExplorer
       style = parent_node.nil? ? :origin : nil
 
       node = add_node(hash, graph, style: style)
-      add_edge(graph, parent_node, node, "  " + hash[:association]) unless parent_node.nil?
+      add_edge(graph, parent_node, node, "  " + hash[:association].to_s) unless parent_node.nil?
 
-      paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].empty?
+      paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].nil?
     end
 
     def paint_subobjects(graph, parent_node, subhashes)
@@ -34,13 +34,21 @@ module ActiveExplorer
       id = hash[:attributes][:id]
       class_name = make_safe(hash[:class_name])
       attributes = make_safe(hash[:attributes].keys.join("\n"))
-      values = make_safe(hash[:attributes].values.collect { |val| make_short(val.to_s) }.join("\n"))
+      values = hash[:attributes].values.collect do |val|
+        if val.nil?
+          'nil'
+        elsif val.is_a? String
+          "\"#{make_short(val)}\""
+        else
+          make_short(val.to_s)
+        end
+      end
+      values = make_safe(values.join("\n"))
 
       if style == :origin
-        # graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}", style: 'filled', color: 'yellow')
-        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}", style: 'filled', fillcolor: 'yellow')
+        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{#{class_name}|{#{attributes}|#{values}}}", labelloc: 't', style: 'filled', fillcolor: 'yellow')
       else
-        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{<f0> #{class_name}|{<f1> #{attributes}|<f2> #{values}}}")
+        graph.add_node("#{class_name}_#{id}", shape: "record", label: "{#{class_name}|{#{attributes}|#{values}}}", labelloc: 't')
       end
     end
 

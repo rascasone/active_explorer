@@ -1,5 +1,5 @@
 class Book < ActiveRecord::Base
-  include ActiveExplorer
+  include ActiveExplorer  #TODO: Remove this.
 
   belongs_to :author
   has_many :reviews

@@ -20,8 +20,6 @@ describe ActiveExplorer do
 
   it 'exports all objects' do
     exploration = author.explore association_filter: [:all]
-    exploration.to_console
-
     exploration_hash = exploration.get_hash
 
     expect(exploration_hash.keys).to eq([:class_name, :attributes, :subobjects])
@@ -40,48 +38,153 @@ describe ActiveExplorer do
 
   it 'exports only direct predecessors and ancestors' do
     exploration = author.books.first.explore
-    exploration.to_console
-
     exploration_hash = exploration.get_hash
 
     expect(exploration_hash[:subobjects].count).to eq(2)
-    expect(exploration_hash[:subobjects].first[:subobjects]).to be_empty
-    expect(exploration_hash[:subobjects].second[:subobjects]).to be_empty
+    expect(exploration_hash[:subobjects].first).not_to have_key(:subobjects)
+    expect(exploration_hash[:subobjects].second).not_to have_key(:subobjects)
+  end
+
+  describe 'object parameters' do
+    it 'has class_name' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:class_name)
+    end
+
+    it 'has attributes' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:attributes)
+    end
+
+    it 'has subobjects' do
+      exploration_hash = author.explore(association_filter: [:all]).get_hash
+
+      expect(exploration_hash).to have_key(:subobjects)
+    end
   end
 
   describe 'filters' do
 
-    context 'when filter covers only some models' do
-      it 'exports multilevel graph' do
-        exploration_hash = author.explore(object_filter: [:books]).get_hash
-        books = exploration_hash[:subobjects]
+    describe 'class filter' do
 
-        author.books.count.times do |i|
-          expect(books[i][:subobjects]).to be_empty
+      context 'as array' do
+
+        context 'when it specifies books' do
+          let(:books) { author.explore(class_filter: [:books]).get_hash[:subobjects] }
+
+          it 'shows only books' do
+            expect(books).not_to be_empty
+
+            author.books.count.times do |i|
+              expect(books[i]).not_to have_key(:subobjects)
+            end
+          end
+
+          it 'does not show review' do
+            books.each do |book|
+              expect(book).not_to have_key(:subobjects)
+            end
+          end
         end
+
+        context 'when limiting depth is set' do
+          let(:books) { author.explore(class_filter: [:books, :reviews], depth: 1).get_hash[:subobjects] }
+          # let(:review) { books.first[:subobjects].first }
+
+          it 'shows only books' do
+            expect(books).not_to be_empty
+          end
+
+          it 'ignores review' do
+            books.each do |book|
+              expect(book[:subobjects]).to be_nil
+            end
+          end
+        end
+
+        context 'when filter and depth covers all models' do
+          let(:books) { author.explore(class_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).get_hash[:subobjects] }
+          let(:review) { books.first[:subobjects].first }
+          let(:author_of_review) { review[:subobjects].first }
+
+          it 'show all objects' do
+            expect(books).not_to be_empty
+            expect(review).not_to be_nil
+            expect(author_of_review).not_to be_nil
+          end
+        end
+
       end
 
-      context 'and depth is set' do
-        it 'exports multilevel graph' do
-          exploration_hash = author.explore(object_filter: [:books, :reviews], depth: 3).get_hash
+      context 'as hash' do
 
-          books = exploration_hash[:subobjects]
-          reviews = books.first[:subobjects]
+        context 'when it specifies to show only books' do
+          let(:books) { author.explore(class_filter: { show: [:books] }).get_hash[:subobjects] }
 
-          expect(reviews.first[:subobjects]).to be_empty
+          it 'shows books' do
+            expect(books).not_to be_empty
+          end
+
+          it 'ignores reviews' do
+            author.books.count.times do |i|
+              expect(books[i]).not_to have_key(:subobjects)
+            end
+          end
         end
+
       end
+
     end
 
-    context 'when filter covers all models' do
-      it 'exports multilevel graph' do
-        exploration_hash = author.explore(object_filter: [:books, :reviews, :authors], depth: 10).get_hash
+    describe 'association filter' do
 
-        books = exploration_hash[:subobjects]
-        reviews = books.first[:subobjects]
+      context 'when has_many' do
+        let(:book) { author.books.first.explore(association_filter: [:has_many]).get_hash }
 
-        expect(reviews.first).to have_key(:subobjects)
+        it 'shows review' do
+          expect(book[:subobjects]).not_to be_nil
+          expect(book[:subobjects].count).to eq(1)
+          expect(book[:subobjects].first[:class_name]).to eq('Review')
+          expect(book[:subobjects].first).not_to have_key(:subobjects)
+        end
+
+        it 'ignores author of review' do
+          review = book[:subobjects].first
+          expect(review).not_to have_key(:subobjects)
+        end
       end
+
+      context 'when belongs_to' do
+        let(:book) { author.books.first.explore(association_filter: [:belongs_to]).get_hash }
+
+        it 'shows author' do
+          expect(book[:subobjects]).not_to be_nil
+          expect(book[:subobjects].count).to eq(1)
+          expect(book[:subobjects].first[:class_name]).to eq('Author')
+        end
+
+        it 'ignores author\'s subobjets' do
+          author = book[:subobjects].first
+          expect(author).not_to have_key(:subobjects)
+        end
+      end
+
+      context 'when all' do
+        let(:book) { author.books.first.explore(association_filter: [:all]).get_hash }
+        let(:author_of_book) { book[:subobjects].first }
+        let(:review) { book[:subobjects].second }
+        let(:author_of_review) { review[:subobjects].first }
+
+        it 'show all objects' do
+          expect(book).not_to be_empty
+          expect(author_of_book).not_to be_nil
+          expect(review).not_to be_nil
+          expect(author_of_review).not_to be_nil
+        end
+      end
+
     end
 
   end
@@ -171,7 +274,7 @@ describe ActiveExplorer do
 
       context 'when filter covers only some models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books], association_filter: [:all]).to_image target_file("author_and_books.png")
+          graph = author.explore(class_filter: [:books], association_filter: [:all]).to_image target_file("author_and_books.png")
 
           expect(graph.node_count).to eq(3)
           expect(graph.edge_count).to eq(2)
@@ -179,7 +282,7 @@ describe ActiveExplorer do
 
         context 'and depth is set' do
           it 'exports multilevel graph' do
-            graph = author.explore(object_filter: [:books, :reviews], association_filter: [:all], depth: 3).to_image target_file("author_books_reviews.png")
+            graph = author.explore(class_filter: [:books, :reviews], association_filter: [:all], depth: 3).to_image target_file("author_books_reviews.png")
 
             expect(graph.node_count).to eq(4)
             expect(graph.edge_count).to eq(3)
@@ -189,7 +292,7 @@ describe ActiveExplorer do
 
       context 'when filter covers all models' do
         it 'exports multilevel graph' do
-          graph = author.explore(object_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).to_image target_file("author_books_reviews_authors.png")
+          graph = author.explore(class_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).to_image target_file("author_books_reviews_authors.png")
 
           expect(graph.node_count).to eq(5)
           expect(graph.edge_count).to eq(4)

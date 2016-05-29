@@ -26,7 +26,7 @@ module ActiveExplorer
 
       if level > 0
         margin[-2] = '->'
-        margin += object[:assocation] == :belongs_to ? 'belongs to' : 'has '
+        margin += object[:association] == :belongs_to ? 'belongs to ' : 'has '
       end
 
       puts "#{margin}#{class_name}(#{id}) #{attributes}"
@@ -36,7 +36,7 @@ module ActiveExplorer
         puts "#{margin}(#{error_message})" if error_message.present?
       end
 
-      write_objects object[:subobjects], level + 1
+      write_objects object[:subobjects], level + 1 unless object[:subobjects].nil?
     end
 
     def write_objects(objects, level)

@@ -7,28 +7,47 @@ module ActiveExplorer
 
     # Creates new exploration and generates exploration hash.
     #
-    # @param association_filter [Array] Values of array: `:has_many`, `:has_one`, `:belongs_to`. When empty
-    #   then it "follows previous association" (i.e. uses `:belongs_to` when previous assoc. was `:belongs_to` and
+    # @param association_filter [Array]
+    #   Values of array: `:has_many`, `:has_one`, `:belongs_to`, `:all`.
+    #   When empty then it "follows previous association" (i.e. uses `:belongs_to` when previous assoc. was `:belongs_to` and
     #   uses `:has_xxx` when previous assoc. was `:has_xxx`). To always follow all associations you must specify
     #   all associations (e.g. uses `ActiveExplorer::Exploration::ASSOCIATION_FILTER_VALUES` as a value).
     #
-    def initialize(object, depth: 5, object_filter: [], association_filter: [], parent_object: nil)
-      raise TypeError, "Parameter 'object_filter' must be Array but is #{object_filter.class}." unless object_filter.is_a? Array
+    # @param class_filter [Array or Hash]
+    #   If Array is used then it means to show only those classes in Array.
+    #   When Hash is used then it can have these keys:
+    #     - `:show` - Shows these classes, ignores at all other classes.
+    #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
+    #   Use plural form (e.g. `books`).
+    #
+    # @param depth [Integer]
+    #   How deep into the subobjects should the explorere go. Depth 1 is only direct children. Depth 0 returns no children.
+    #
+    def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
+      raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.is_a?(Array) || class_filter.is_a?(Hash)
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
-      raise ArgumentError, "Argument 'max_depth' must be at least 1." if depth <= 0
 
       @object = object
       @depth = depth
-      @object_filter = object_filter.collect { |a| a.to_s }
-      @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
-      @associations = associtations(@object, @object_filter)
       @parent_object = parent_object
 
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: @object.attributes.symbolize_keys }
 
-      @hash[:subobjects] = subobjects_hash(@object, @associations)
+      unless @depth.zero?
+        @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
+
+        [:show, :ignore].each do |group|
+          @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
+        end
+
+        @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
+        @associations = associtations(@object, @class_filter, @association_filter)
+
+        subobject_hash = subobjects_hash(@object, @associations)
+        @hash[:subobjects] = subobject_hash unless subobject_hash.empty?
+      end
     end
 
     def get_hash
@@ -37,66 +56,49 @@ module ActiveExplorer
 
     def to_console
       Writer.new(self).write
-      nil
     end
 
     def to_image(file, origin_as_root: false)
       Painter.new(self, file).paint(origin_as_root: origin_as_root)
-      nil
     end
 
     private
 
     def subobjects_hash(object, associations)
-      results = []
+      associations.each_with_object([]) do |association, results|
+        case association_type(association)
+          when :belongs_to
+            subobject = subobjects_from_association(object, association)
 
-      associations.each do |association|
-        association_type = association_type(association)
-
-        next unless @association_filter.empty? || @association_filter.include?(association_type)
-
-        if is_belongs_to_association?(association)
-          subobject = subobjects_from_association(object, association)
-
-          next if subobject.nil?
-
-          unless is_parent?(subobject)
-            if @depth > 1
-              exploration = explore(subobject, parent_object: object, association_type: association_type)
-
-              hash = exploration.get_hash
-              hash[:association] = association_type.to_s
-
-              results.push hash
+            if subobject.present?
+              results.push subobject_hash(association, object, subobject) unless is_parent?(subobject)
             end
-          end
-        elsif is_has_many_association?(association) || is_has_one_association?(association)
-          subobjects = subobjects_from_association(object, association)
 
-          next if subobjects.nil? || subobjects.empty?
+          when :has_many, :has_one
+            subobjects = subobjects_from_association(object, association)
 
-          subobjects.each do |subobject|
-
-            unless is_parent?(subobject)
-              if @depth > 1
-                exploration = explore(subobject, parent_object: object, association_type: association_type) # TODO: Wouldn't it be better call this directly on the object? Monkey patch it.
-
-                hash = exploration.get_hash
-                hash[:association] = association_type.to_s
-
-                results.push hash
+            if subobjects.present?
+              subobjects.each do |subobject|
+                results.push subobject_hash(association, object, subobject) unless is_parent?(subobject)
               end
             end
-          end
         end
       end
+    end
 
-      results
+    def subobject_hash(association, object, subobject)
+      association_type = association_type(association)
+
+      exploration = explore(subobject, parent_object: object, association_type: association_type)
+
+      hash = exploration.get_hash
+      hash[:association] = association_type
+      hash
     end
 
     def subobjects_from_association(object, association)
       subobjects = object.send(association.name)
-      defined?(subobjects) && subobjects.present? ? subobjects : nil
+      subobjects.present? ? subobjects : nil
 
     rescue NameError, ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
       association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'
@@ -113,17 +115,33 @@ module ActiveExplorer
                              [:has_many, :has_one]
                            end
 
-      Exploration.new object, depth: @depth - 1, object_filter: @object_filter, association_filter: association_filter, parent_object: parent_object
+      Exploration.new object,
+                      depth: @depth - 1,
+                      class_filter: @class_filter,
+                      association_filter: association_filter,
+                      parent_object: parent_object
     end
 
-    def associtations(object, filter)
+    def associtations(object, class_filter, association_filter)
       associations = object.class.reflections.collect do |reflection|
         reflection.second
       end
 
-      if filter.any?
+      if association_filter.any? && !association_filter.include?(:all)
         associations.select! do |association|
-          filter.include? association.plural_name.to_s
+          association_filter.include? association_type(association)
+        end
+      end
+
+      if class_filter.any?
+        if class_filter[:show].any?
+          associations.select! do |association|
+            should_show?(association)
+          end
+        elsif class_filter[:ignore].any?
+          associations.reject! do |association|
+            should_ignore?(association)
+          end
         end
       end
 
@@ -137,6 +155,16 @@ module ActiveExplorer
       @hash[:error_message] = "Error in #{@object.class.name}(#{@object.id}): #{message}"
     end
 
+    def association_type(association)
+      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
+        :has_many
+      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
+        :has_one
+      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
+        :belongs_to
+      end
+    end
+
     def make_short(text)
       text.length < 70 ? text : text[0..70] + " (...)"
     end
@@ -146,6 +174,10 @@ module ActiveExplorer
     #
     def make_safe(text)
       text.tr('{}<>|\\', '')
+    end
+
+    def each_val_to_s(array)
+      array.collect { |a| a.to_s }
     end
 
     def is_belongs_to_association?(association)
@@ -164,14 +196,12 @@ module ActiveExplorer
       object === @parent_object
     end
 
-    def association_type(association)
-      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
-        :has_many
-      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
-        :has_one
-      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
-        :belongs_to
-      end
+    def should_show?(association)
+      @class_filter[:show].include? association.plural_name.to_s
+    end
+
+    def should_ignore?(association)
+      @class_filter[:ignore].include? association.plural_name.to_s
     end
   end
 end

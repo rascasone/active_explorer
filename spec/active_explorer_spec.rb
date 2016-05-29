@@ -187,6 +187,14 @@ describe ActiveExplorer do
 
     end
 
+    describe 'attributes filter' do
+      let(:book) { author.books.first.explore(attribute_filter: {books: [:id, :title]}).get_hash }
+
+      it 'shows only id and name of book' do
+        expect(book[:attributes].keys).to eq([:id, :title])
+      end
+    end
+
   end
 
   describe 'error handling' do

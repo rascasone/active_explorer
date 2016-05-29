@@ -98,7 +98,7 @@ module ActiveExplorer
 
     def subobjects_from_association(object, association)
       subobjects = object.send(association.name)
-      defined?(subobjects) && subobjects.present? ? subobjects : nil  #TODO: Remove `defined` part.
+      subobjects.present? ? subobjects : nil
 
     rescue NameError, ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
       association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'

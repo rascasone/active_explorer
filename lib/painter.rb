@@ -21,7 +21,7 @@ module ActiveExplorer
       node = add_node(hash, graph, style: style)
       add_edge(graph, parent_node, node, "  " + hash[:association].to_s) unless parent_node.nil?
 
-      paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].empty?
+      paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].nil?
     end
 
     def paint_subobjects(graph, parent_node, subhashes)

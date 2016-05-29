@@ -19,29 +19,35 @@ module ActiveExplorer
     #     - `:show` - Shows these classes, ignores at all other classes.
     #     - `:ignore` - Stops processing at these, does not show it and does not go to children. Processing goes back to parent.
     #   Use plural form (e.g. `books`).
+    #
+    # @param depth [Integer]
+    #   How deep into the subobjects should the explorere go. Depth 1 is only direct children. Depth 0 returns no children.
+    #
     def initialize(object, depth: 5, class_filter: [], association_filter: [], parent_object: nil)
       raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.is_a?(Array) || class_filter.is_a?(Hash)
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
-      raise ArgumentError, "Argument 'max_depth' must be at least 1." if depth <= 0
 
       @object = object
       @depth = depth
       @parent_object = parent_object
 
-      @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
-
-      [:show, :ignore].each do |group|
-        @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
-      end
-
-      @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
-      @associations = associtations(@object, @class_filter, @association_filter)
-
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: @object.attributes.symbolize_keys }
 
-      @hash[:subobjects] = subobjects_hash(@object, @associations)
+      unless @depth.zero?
+        @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
+
+        [:show, :ignore].each do |group|
+          @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
+        end
+
+        @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
+        @associations = associtations(@object, @class_filter, @association_filter)
+
+        subobject_hash = subobjects_hash(@object, @associations)
+        @hash[:subobjects] = subobject_hash unless subobject_hash.empty?
+      end
     end
 
     def get_hash
@@ -59,8 +65,6 @@ module ActiveExplorer
     private
 
     def subobjects_hash(object, associations)
-      return [] if @depth == 0
-
       associations.each_with_object([]) do |association, results|
         case association_type(association)
           when :belongs_to
@@ -94,7 +98,7 @@ module ActiveExplorer
 
     def subobjects_from_association(object, association)
       subobjects = object.send(association.name)
-      defined?(subobjects) && subobjects.present? ? subobjects : nil
+      defined?(subobjects) && subobjects.present? ? subobjects : nil  #TODO: Remove `defined` part.
 
     rescue NameError, ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
       association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'
@@ -111,7 +115,11 @@ module ActiveExplorer
                              [:has_many, :has_one]
                            end
 
-      Exploration.new object, depth: @depth - 1, class_filter: @class_filter, association_filter: association_filter, parent_object: parent_object
+      Exploration.new object,
+                      depth: @depth - 1,
+                      class_filter: @class_filter,
+                      association_filter: association_filter,
+                      parent_object: parent_object
     end
 
     def associtations(object, class_filter, association_filter)

@@ -41,8 +41,8 @@ describe ActiveExplorer do
     exploration_hash = exploration.get_hash
 
     expect(exploration_hash[:subobjects].count).to eq(2)
-    expect(exploration_hash[:subobjects].first[:subobjects]).to be_empty
-    expect(exploration_hash[:subobjects].second[:subobjects]).to be_empty
+    expect(exploration_hash[:subobjects].first).not_to have_key(:subobjects)
+    expect(exploration_hash[:subobjects].second).not_to have_key(:subobjects)
   end
 
   describe 'object parameters' do
@@ -78,35 +78,34 @@ describe ActiveExplorer do
             expect(books).not_to be_empty
 
             author.books.count.times do |i|
-              expect(books[i][:subobjects]).to be_empty
+              expect(books[i]).not_to have_key(:subobjects)
             end
           end
 
           it 'does not show review' do
-            review = books.first[:subobjects].first
-
-            expect(review).to be_nil
+            books.each do |book|
+              expect(book).not_to have_key(:subobjects)
+            end
           end
         end
 
         context 'when limiting depth is set' do
-          let(:books) { author.explore(class_filter: [:books, :reviews], depth: 3).get_hash[:subobjects] }
-          let(:review) { books.first[:subobjects].first }
+          let(:books) { author.explore(class_filter: [:books, :reviews], depth: 1).get_hash[:subobjects] }
+          # let(:review) { books.first[:subobjects].first }
 
-          it 'shows only books and reviews' do
+          it 'shows only books' do
             expect(books).not_to be_empty
-            expect(review).not_to be_nil
           end
 
-          it 'ignores author of review' do
-            author = review[:subobjects].first
-
-            expect(author).to be_nil
+          it 'ignores review' do
+            books.each do |book|
+              expect(book[:subobjects]).to be_nil
+            end
           end
         end
 
         context 'when filter and depth covers all models' do
-          let(:books) { author.explore(class_filter: [:books, :reviews, :authors], depth: 10).get_hash[:subobjects] }
+          let(:books) { author.explore(class_filter: [:books, :reviews, :authors], association_filter: [:all], depth: 10).get_hash[:subobjects] }
           let(:review) { books.first[:subobjects].first }
           let(:author_of_review) { review[:subobjects].first }
 
@@ -123,18 +122,15 @@ describe ActiveExplorer do
 
         context 'when it specifies to show only books' do
           let(:books) { author.explore(class_filter: { show: [:books] }).get_hash[:subobjects] }
-          let(:review) { books.first[:subobjects].first }
 
           it 'shows books' do
             expect(books).not_to be_empty
-
-            author.books.count.times do |i|
-              expect(books[i][:subobjects]).to be_empty
-            end
           end
 
           it 'ignores reviews' do
-            expect(review).to be_nil
+            author.books.count.times do |i|
+              expect(books[i]).not_to have_key(:subobjects)
+            end
           end
         end
 
@@ -151,12 +147,12 @@ describe ActiveExplorer do
           expect(book[:subobjects]).not_to be_nil
           expect(book[:subobjects].count).to eq(1)
           expect(book[:subobjects].first[:class_name]).to eq('Review')
-          expect(book[:subobjects].first[:subobjects]).to be_empty
+          expect(book[:subobjects].first).not_to have_key(:subobjects)
         end
 
         it 'ignores author of review' do
           review = book[:subobjects].first
-          expect(review[:subobjects]).to be_empty
+          expect(review).not_to have_key(:subobjects)
         end
       end
 
@@ -171,9 +167,24 @@ describe ActiveExplorer do
 
         it 'ignores author\'s subobjets' do
           author = book[:subobjects].first
-          expect(author[:subobjects]).to be_empty
+          expect(author).not_to have_key(:subobjects)
         end
       end
+
+      context 'when all' do
+        let(:book) { author.books.first.explore(association_filter: [:all]).get_hash }
+        let(:author_of_book) { book[:subobjects].first }
+        let(:review) { book[:subobjects].second }
+        let(:author_of_review) { review[:subobjects].first }
+
+        it 'show all objects' do
+          expect(book).not_to be_empty
+          expect(author_of_book).not_to be_nil
+          expect(review).not_to be_nil
+          expect(author_of_review).not_to be_nil
+        end
+      end
+
     end
 
   end

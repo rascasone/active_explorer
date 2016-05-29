@@ -5,6 +5,11 @@ require 'exploration'
 
 module ActiveExplorer
   def explore(class_filter: [], association_filter: [], depth: 5)
+    if depth <= 0
+      puts "Depth must larger than or equal to 1."
+      return nil
+    end
+
     Exploration.new self, depth: depth, class_filter: class_filter, association_filter: association_filter
   end
 end

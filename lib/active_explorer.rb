@@ -4,7 +4,7 @@ require 'graphviz'
 require 'exploration'
 
 # Explore object and print output to console.
-def ex(object, class_filter: [], attribute_filter: [], association_filter: [], depth: 5)
+def ex(object, class_filter: nil, attribute_filter: nil, association_filter: nil, depth: 5)
   if depth <= 0
     puts "Depth must larger than or equal to 1."
     return
@@ -21,7 +21,7 @@ def ex(object, class_filter: [], attribute_filter: [], association_filter: [], d
 end
 
 # Explore object and print output to image file.
-def exf(object, file_name = nil, class_filter: [], attribute_filter: [], association_filter: [], depth: 5)
+def exf(object, file_name = nil, class_filter: nil, attribute_filter: nil, association_filter: nil, depth: 5)
   if depth <= 0
     puts "Depth must larger than or equal to 1."
     return

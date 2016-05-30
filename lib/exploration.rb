@@ -1,5 +1,6 @@
 require 'writer'
 require 'painter'
+require 'config'
 
 module ActiveExplorer
   class Exploration
@@ -38,7 +39,13 @@ module ActiveExplorer
                 attributes: attributes }
 
       unless @depth.zero?
-        @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
+        @class_filter = if ActiveExplorer::Config.class_filter.present? && class_filter.empty?
+                          ActiveExplorer::Config.class_filter
+                        else
+                          class_filter
+                        end
+
+        @class_filter = { show: @class_filter } if @class_filter.is_a?(Array)
 
         [:show, :ignore].each do |group|
           @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []

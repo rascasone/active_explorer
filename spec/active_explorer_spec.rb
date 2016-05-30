@@ -188,13 +188,49 @@ describe ActiveExplorer do
     end
 
     describe 'attributes filter' do
-      let(:book) { author.books.first.explore(attribute_filter: {books: [:id, :title]}).get_hash }
+      let(:book) { author.books.first.explore(attribute_filter: { books: [:id, :title] }).get_hash }
 
       it 'shows only id and name of book' do
         expect(book[:attributes].keys).to eq([:id, :title])
       end
     end
 
+  end
+
+  describe 'global configuration' do
+    it 'can configure all filters' do
+      expect(ActiveExplorer::Config).to respond_to(:class_filter, :class_filter=)
+      expect(ActiveExplorer::Config).to respond_to(:attribute_filter, :attribute_filter=)
+      expect(ActiveExplorer::Config).to respond_to(:association_filter, :association_filter=)
+    end
+
+    describe 'class filter' do
+      context 'when books are filtered' do
+        before :all do
+          ActiveExplorer::Config.class_filter = [:books]
+        end
+
+        after :all do
+          ActiveExplorer::Config.class_filter = nil
+        end
+
+        let(:books) { author.explore.get_hash[:subobjects] }
+
+        it 'allows only books' do
+          expect(books).not_to be_empty
+
+          author.books.count.times do |i|
+            expect(books[i]).not_to have_key(:subobjects)
+          end
+        end
+
+        it 'forbids review' do
+          books.each do |book|
+            expect(book).not_to have_key(:subobjects)
+          end
+        end
+      end
+    end
   end
 
   describe 'error handling' do

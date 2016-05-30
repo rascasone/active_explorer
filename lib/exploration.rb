@@ -55,7 +55,14 @@ module ActiveExplorer
           @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
         end
 
-        @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
+        @association_filter = if ActiveExplorer::Config.association_filter.present? && association_filter.empty?
+                          ActiveExplorer::Config.association_filter
+                        else
+                          association_filter
+                        end
+
+        @association_filter = ASSOCIATION_FILTER_VALUES if @association_filter.include?(:all)
+
         @associations = associtations(@object, @class_filter, @association_filter)
 
         subobject_hash = subobjects_hash(@object, @associations)

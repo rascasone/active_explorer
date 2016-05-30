@@ -231,6 +231,43 @@ describe ActiveExplorer do
         end
       end
     end
+
+    describe 'attribute filter' do
+      context 'when book and review attributes are filtered' do
+        before :all do
+          ActiveExplorer::Config.attribute_filter = { books: [:id, :title], reviews: [:id] }
+        end
+
+        after :all do
+          ActiveExplorer::Config.attribute_filter = nil
+        end
+
+        let(:books) { author.explore.get_hash[:subobjects] }
+        let(:review) { books.first[:subobjects].first }
+
+        it 'allows id and title for books' do
+          author.books.count.times do |i|
+            expect(books[i][:attributes]).to have_key(:id)
+            expect(books[i][:attributes]).to have_key(:title)
+          end
+        end
+
+        it 'forbids year for book' do
+          author.books.count.times do |i|
+            expect(books[i][:attributes]).not_to have_key(:year)
+          end
+        end
+
+        it 'allows id for review' do
+          expect(review[:attributes]).to have_key(:id)
+        end
+
+        it 'forbids stars and text for review' do
+          expect(review[:attributes]).not_to have_key(:stars)
+          expect(review[:attributes]).not_to have_key(:text)
+        end
+      end
+    end
   end
 
   describe 'error handling' do

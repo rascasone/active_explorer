@@ -33,7 +33,11 @@ module ActiveExplorer
       @depth = depth
       @parent_object = parent_object
 
-      @attribute_filter = attribute_filter
+      @attribute_filter = if ActiveExplorer::Config.attribute_filter.present? && attribute_filter.empty?
+                        ActiveExplorer::Config.attribute_filter
+                      else
+                        attribute_filter
+                      end
 
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: attributes }

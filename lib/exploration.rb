@@ -24,44 +24,30 @@ module ActiveExplorer
     # @param depth [Integer]
     #   How deep into the subobjects should the explorere go. Depth 1 is only direct children. Depth 0 returns no children.
     #
-    def initialize(object, depth: 5, class_filter: [], attribute_filter: [], association_filter: [], parent_object: nil)
-      raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.is_a?(Array) || class_filter.is_a?(Hash)
-      raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.is_a? Array
-      raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
+    def initialize(object, depth: 5, class_filter: nil, attribute_filter: nil, association_filter: nil, parent_object: nil)
+      raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.nil? || class_filter.is_a?(Array) || class_filter.is_a?(Hash)
+      raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.nil? || association_filter.is_a?(Array)
+      raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.nil? || association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
 
       @object = object
       @depth = depth
       @parent_object = parent_object
 
-      @attribute_filter = if ActiveExplorer::Config.attribute_filter.present? && attribute_filter.empty?
-                        ActiveExplorer::Config.attribute_filter
-                      else
-                        attribute_filter
-                      end
+      @attribute_filter = attribute_filter || ActiveExplorer::Config.attribute_filter
 
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: attributes }
 
       unless @depth.zero?
-        @class_filter = if ActiveExplorer::Config.class_filter.present? && class_filter.empty?
-                          ActiveExplorer::Config.class_filter
-                        else
-                          class_filter
-                        end
-
+        @class_filter = class_filter || ActiveExplorer::Config.class_filter
         @class_filter = { show: @class_filter } if @class_filter.is_a?(Array)
 
         [:show, :ignore].each do |group|
           @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
         end
 
-        @association_filter = if ActiveExplorer::Config.association_filter.present? && association_filter.empty?
-                          ActiveExplorer::Config.association_filter
-                        else
-                          association_filter
-                        end
-
-        @association_filter = ASSOCIATION_FILTER_VALUES if @association_filter.include?(:all)
+        @association_filter = association_filter || ActiveExplorer::Config.association_filter
+        @association_filter = ASSOCIATION_FILTER_VALUES if @association_filter.present? && @association_filter.include?(:all)
 
         @associations = associtations(@object, @class_filter, @association_filter)
 
@@ -71,7 +57,7 @@ module ActiveExplorer
     end
 
     def attributes
-      return @object.attributes.symbolize_keys if @attribute_filter.empty?
+      return @object.attributes.symbolize_keys if @attribute_filter.nil?
 
       filter = @attribute_filter[@object.class.name.downcase.pluralize.to_sym]
 
@@ -139,7 +125,7 @@ module ActiveExplorer
     end
 
     def explore(object, parent_object:, association_type:)
-      association_filter = if @association_filter.any?
+      association_filter = if !@association_filter.nil? && @association_filter.any?
                              @association_filter
                            elsif association_type == :belongs_to
                              [:belongs_to]
@@ -160,13 +146,13 @@ module ActiveExplorer
         reflection.second
       end
 
-      if association_filter.any? && !association_filter.include?(:all)
+      if !association_filter.nil? && association_filter.any? && !association_filter.include?(:all)
         associations.select! do |association|
           association_filter.include? association_type(association)
         end
       end
 
-      if class_filter.any?
+      if class_filter
         if class_filter[:show].any?
           associations.select! do |association|
             should_show?(association)

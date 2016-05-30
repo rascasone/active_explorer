@@ -3,19 +3,13 @@ require "active_explorer/version"
 require 'graphviz'
 require 'exploration'
 
-module ActiveExplorer
-  def explore(class_filter: [], attribute_filter: [], association_filter: [], depth: 5)
-    if depth <= 0
-      puts "Depth must larger than or equal to 1."
-      return nil
-    end
-
-    Exploration.new self, depth: depth, class_filter: class_filter, attribute_filter: attribute_filter, association_filter: association_filter
-  end
-end
-
 # Explore object and print output to console.
 def ex(object, class_filter: [], attribute_filter: [], association_filter: [], depth: 5)
+  if depth <= 0
+    puts "Depth must larger than or equal to 1."
+    return
+  end
+
   if object.nil?
     puts "Object to be explored is `nil`."
     return
@@ -28,6 +22,11 @@ end
 
 # Explore object and print output to image file.
 def exf(object, file_name = nil, class_filter: [], attribute_filter: [], association_filter: [], depth: 5)
+  if depth <= 0
+    puts "Depth must larger than or equal to 1."
+    return
+  end
+
   if object.nil?
     puts "Object to be explored is `nil`."
     return

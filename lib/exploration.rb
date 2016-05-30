@@ -1,5 +1,6 @@
 require 'writer'
 require 'painter'
+require 'config'
 
 module ActiveExplorer
   class Exploration
@@ -32,19 +33,36 @@ module ActiveExplorer
       @depth = depth
       @parent_object = parent_object
 
-      @attribute_filter = attribute_filter
+      @attribute_filter = if ActiveExplorer::Config.attribute_filter.present? && attribute_filter.empty?
+                        ActiveExplorer::Config.attribute_filter
+                      else
+                        attribute_filter
+                      end
 
       @hash = { class_name: make_safe(@object.class.name),
                 attributes: attributes }
 
       unless @depth.zero?
-        @class_filter = class_filter.is_a?(Array) ? { show: class_filter } : class_filter
+        @class_filter = if ActiveExplorer::Config.class_filter.present? && class_filter.empty?
+                          ActiveExplorer::Config.class_filter
+                        else
+                          class_filter
+                        end
+
+        @class_filter = { show: @class_filter } if @class_filter.is_a?(Array)
 
         [:show, :ignore].each do |group|
           @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
         end
 
-        @association_filter = association_filter.include?(:all) ? ASSOCIATION_FILTER_VALUES : association_filter
+        @association_filter = if ActiveExplorer::Config.association_filter.present? && association_filter.empty?
+                          ActiveExplorer::Config.association_filter
+                        else
+                          association_filter
+                        end
+
+        @association_filter = ASSOCIATION_FILTER_VALUES if @association_filter.include?(:all)
+
         @associations = associtations(@object, @class_filter, @association_filter)
 
         subobject_hash = subobjects_hash(@object, @associations)

@@ -188,13 +188,145 @@ describe ActiveExplorer do
     end
 
     describe 'attributes filter' do
-      let(:book) { author.books.first.explore(attribute_filter: {books: [:id, :title]}).get_hash }
+      let(:book) { author.books.first.explore(attribute_filter: { books: [:id, :title] }).get_hash }
 
       it 'shows only id and name of book' do
         expect(book[:attributes].keys).to eq([:id, :title])
       end
     end
 
+  end
+
+  describe 'global configuration' do
+    it 'can configure all filters' do
+      expect(ActiveExplorer::Config).to respond_to(:class_filter, :class_filter=)
+      expect(ActiveExplorer::Config).to respond_to(:attribute_filter, :attribute_filter=)
+      expect(ActiveExplorer::Config).to respond_to(:association_filter, :association_filter=)
+    end
+
+    describe 'class filter' do
+      context 'when books are filtered' do
+        before :all do
+          ActiveExplorer::Config.class_filter = [:books]
+        end
+
+        after :all do
+          ActiveExplorer::Config.class_filter = nil
+        end
+
+        let(:books) { author.explore.get_hash[:subobjects] }
+
+        it 'allows only books' do
+          expect(books).not_to be_empty
+
+          author.books.count.times do |i|
+            expect(books[i]).not_to have_key(:subobjects)
+          end
+        end
+
+        it 'forbids review' do
+          books.each do |book|
+            expect(book).not_to have_key(:subobjects)
+          end
+        end
+      end
+    end
+
+    describe 'attribute filter' do
+      context 'when book and review attributes are filtered' do
+        before :all do
+          ActiveExplorer::Config.attribute_filter = { books: [:id, :title], reviews: [:id] }
+        end
+
+        after :all do
+          ActiveExplorer::Config.attribute_filter = nil
+        end
+
+        let(:books) { author.explore.get_hash[:subobjects] }
+        let(:review) { books.first[:subobjects].first }
+
+        it 'allows id and title for books' do
+          author.books.count.times do |i|
+            expect(books[i][:attributes]).to have_key(:id)
+            expect(books[i][:attributes]).to have_key(:title)
+          end
+        end
+
+        it 'forbids year for book' do
+          author.books.count.times do |i|
+            expect(books[i][:attributes]).not_to have_key(:year)
+          end
+        end
+
+        it 'allows id for review' do
+          expect(review[:attributes]).to have_key(:id)
+        end
+
+        it 'forbids stars and text for review' do
+          expect(review[:attributes]).not_to have_key(:stars)
+          expect(review[:attributes]).not_to have_key(:text)
+        end
+      end
+    end
+
+    describe 'association filter' do
+      before :all do
+        ActiveExplorer::Config.association_filter = [:has_many]
+      end
+
+      after :all do
+        ActiveExplorer::Config.association_filter = nil
+      end
+
+      context 'when has_many is forced' do
+        let(:book) { author.books.first.explore.get_hash }
+
+        it 'allows review' do
+          expect(book).to have_key(:subobjects)
+          expect(book[:subobjects].count).to eq(1)
+          expect(book[:subobjects].first[:class_name]).to eq('Review')
+        end
+
+        it 'forbids author of book' do
+          expect(book[:subobjects].count).to eq(1)
+          expect(book[:subobjects].first[:class_name]).not_to eq('Author')
+        end
+
+        it 'forbids author of review' do
+          review = book[:subobjects].first
+          expect(review).not_to have_key(:subobjects)
+        end
+      end
+
+      context 'when belongs_to' do
+        let(:book) { author.books.first.explore(association_filter: [:belongs_to]).get_hash }
+
+        it 'shows author' do
+          expect(book[:subobjects]).not_to be_nil
+          expect(book[:subobjects].count).to eq(1)
+          expect(book[:subobjects].first[:class_name]).to eq('Author')
+        end
+
+        it 'ignores author\'s subobjets' do
+          author = book[:subobjects].first
+          expect(author).not_to have_key(:subobjects)
+        end
+      end
+
+      context 'when all' do
+        let(:book) { author.books.first.explore(association_filter: [:all]).get_hash }
+        let(:author_of_book) { book[:subobjects].first }
+        let(:review) { book[:subobjects].second }
+        let(:author_of_review) { review[:subobjects].first }
+
+        it 'show all objects' do
+          expect(book).not_to be_empty
+          expect(author_of_book).not_to be_nil
+          expect(review).not_to be_nil
+          expect(author_of_review).not_to be_nil
+        end
+      end
+    end
   end
 
   describe 'error handling' do

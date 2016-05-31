@@ -8,6 +8,6 @@ class CreateBooks < ActiveRecord::Migration
       t.datetime 'updated_at'
     end
 
-    add_foreign_key 'books', 'authors'
+    add_foreign_key 'books', 'authors', on_delete: :nullify
   end
 end

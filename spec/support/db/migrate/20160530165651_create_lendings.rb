@@ -1,8 +1,8 @@
 class CreateLendings < ActiveRecord::Migration
   def change
     create_table 'lendings', force: :cascade do |t|
-      t.references(:person, foreign_key: true)
-      t.references(:book, foreign_key: true)
+      t.references :person, foreign_key: true, on_delete: :cascade
+      t.references :book, foreign_key: true, on_delete: :cascade
 
       t.string 'state'
 

@@ -66,7 +66,7 @@ ActiveRecord::Schema.define(version: 20160530165651) do
   add_index "reviews", ["author_id"], name: "index_reviews_on_author_id", using: :btree
   add_index "reviews", ["book_id"], name: "index_reviews_on_book_id", using: :btree
 
-  add_foreign_key "books", "authors"
+  add_foreign_key "books", "authors", on_delete: :nullify
   add_foreign_key "lendings", "books"
   add_foreign_key "lendings", "people"
   add_foreign_key "reviews", "authors"

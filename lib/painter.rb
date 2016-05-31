@@ -19,7 +19,7 @@ module ActiveExplorer
       style = parent_node.nil? ? :origin : nil
 
       node = add_node(hash, graph, style: style)
-      add_edge(graph, parent_node, node, "  " + hash[:association].to_s) unless parent_node.nil?
+      add_edge(graph, parent_node, node, hash[:association]) unless parent_node.nil?
 
       paint_subobjects graph, node, hash[:subobjects] unless hash[:subobjects].nil?
     end
@@ -54,14 +54,22 @@ module ActiveExplorer
 
     def add_edge(graph, parent_node, node, association)
       if @centralized
-        graph.add_edge(parent_node, node, label: association.include?('belongs_to') ? ' belongs to' : ' has')
+        graph.add_edge(parent_node, node, label: association == :belongs_to ? ' belongs to' : ' has') unless edge_exists?(graph, parent_node, node)
       else
-        if association.include? "belongs_to"
-          graph.add_edge(node, parent_node)
+        if association == :belongs_to
+          graph.add_edge(node, parent_node) unless edge_exists?(graph, node, parent_node)
         else
-          graph.add_edge(parent_node, node)
+          graph.add_edge(parent_node, node) unless edge_exists?(graph, parent_node, node)
         end
       end
+    end
+
+    def edge_exists?(graph, node_one, node_two)
+      graph.each_edge do |edge|
+        return true if edge.node_one == node_one.id && edge.node_two == node_two.id
+      end
+
+      false
     end
 
     def save_to_file

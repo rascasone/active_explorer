@@ -48,7 +48,7 @@ describe ActiveExplorer do
 
   describe 'object parameters' do
     it 'has class_name' do
-      exploration_hash = ActiveExplorer::Exploration.new( author, association_filter: [:all]).get_hash
+      exploration_hash = ActiveExplorer::Exploration.new(author, association_filter: [:all]).get_hash
 
       expect(exploration_hash).to have_key(:class_name)
     end
@@ -400,12 +400,13 @@ describe ActiveExplorer do
         expect(File).to exist(file), "File #{file} doesn't exist."
       end
 
-      it 'works with through associations' do
+      it 'does not duplicate edges in complex graphs' do
         file = target_file("through_associations_test.png")
 
-        ActiveExplorer::Exploration.new(lendee).to_image file
+        graph = ActiveExplorer::Exploration.new(lendee, depth: 10, association_filter: [:all]).to_image file
 
-        expect(File).to exist(file), "File #{file} doesn't exist."
+        expect(graph.node_count).to eq(8)
+        expect(graph.edge_count).to eq(12) # This includes 2 "has many through" associations that are in mutual direction.
       end
     end
 

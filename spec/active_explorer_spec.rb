@@ -17,6 +17,7 @@ describe ActiveExplorer do
   # end
 
   let(:author) { create :author_of_books }
+  let(:lendee) { create :lendee }
 
   it 'exports all objects' do
     exploration = ActiveExplorer::Exploration.new author, association_filter: [:all]
@@ -91,7 +92,6 @@ describe ActiveExplorer do
 
         context 'when limiting depth is set' do
           let(:books) { ActiveExplorer::Exploration.new(author, class_filter: [:books, :reviews], depth: 1).get_hash[:subobjects] }
-          # let(:review) { books.first[:subobjects].first }
 
           it 'shows only books' do
             expect(books).not_to be_empty
@@ -381,7 +381,7 @@ describe ActiveExplorer do
   describe 'output to image' do
     describe 'its basic features' do
       it 'creates file' do
-        file = target_file("mindmap_save_test.png")
+        file = target_file("exploration_save_test.png")
 
         ActiveExplorer::Exploration.new(author, association_filter: [:all]).to_image file
 
@@ -396,6 +396,14 @@ describe ActiveExplorer do
         author.books.create title: 'These are ok: /*&^%$@#!():;.|+-=`[]*/', year: 2016
 
         ActiveExplorer::Exploration.new(author).to_image file
+
+        expect(File).to exist(file), "File #{file} doesn't exist."
+      end
+
+      it 'works with through associations' do
+        file = target_file("through_associations_test.png")
+
+        ActiveExplorer::Exploration.new(lendee).to_image file
 
         expect(File).to exist(file), "File #{file} doesn't exist."
       end

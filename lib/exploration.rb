@@ -175,7 +175,9 @@ module ActiveExplorer
     end
 
     def association_type(association)
-      if association.is_a?(ActiveRecord::Reflection::HasManyReflection)
+      if association.is_a?(ActiveRecord::Reflection::HasManyReflection) ||
+          association.is_a?(ActiveRecord::Reflection::ThroughReflection) ||
+          association.is_a?(ActiveRecord::Reflection::HasAndBelongsToManyReflection)
         :has_many
       elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
         :has_one

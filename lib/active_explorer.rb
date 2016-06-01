@@ -4,7 +4,7 @@ require 'graphviz'
 require 'exploration'
 
 # Explore object and print output to console.
-def ex(object, class_filter: nil, attribute_filter: nil, association_filter: nil, depth: 5)
+def ex(object, class_filter: nil, attribute_filter: nil, attribute_limit: nil, association_filter: nil, depth: 5)
   if depth <= 0
     puts "Depth must larger than or equal to 1."
     return
@@ -15,13 +15,18 @@ def ex(object, class_filter: nil, attribute_filter: nil, association_filter: nil
     return
   end
 
-  exploration = ActiveExplorer::Exploration.new object, depth: depth, class_filter: class_filter, attribute_filter: attribute_filter, association_filter: association_filter
+  exploration = ActiveExplorer::Exploration.new object,
+                                                depth: depth,
+                                                class_filter: class_filter,
+                                                attribute_filter: attribute_filter,
+                                                attribute_limit: attribute_limit,
+                                                association_filter: association_filter
   exploration.to_console
   nil
 end
 
 # Explore object and print output to image file.
-def exf(object, file_name = nil, class_filter: nil, attribute_filter: nil, association_filter: nil, depth: 5)
+def exf(object, file_name = nil, class_filter: nil, attribute_filter: nil, attribute_limit: nil, association_filter: nil, depth: 5)
   if depth <= 0
     puts "Depth must larger than or equal to 1."
     return
@@ -36,7 +41,12 @@ def exf(object, file_name = nil, class_filter: nil, attribute_filter: nil, assoc
 
   puts "\nOutput file: #{file}\n"
 
-  exploration = ActiveExplorer::Exploration.new object, depth: depth, class_filter: class_filter, attribute_filter: attribute_filter, association_filter: association_filter
+  exploration = ActiveExplorer::Exploration.new object,
+                                                depth: depth,
+                                                class_filter: class_filter,
+                                                attribute_filter: attribute_filter,
+                                                attribute_limit: attribute_limit,
+                                                association_filter: association_filter
   exploration.to_image file
   nil
 end

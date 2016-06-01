@@ -187,11 +187,23 @@ describe ActiveExplorer do
 
     end
 
-    describe 'attributes filter' do
+    describe 'attribute filter' do
       let(:book) { ActiveExplorer::Exploration.new(author.books.first, attribute_filter: { books: [:id, :title] }).get_hash }
 
       it 'shows only id and name of book' do
         expect(book[:attributes].keys).to eq([:id, :title])
+      end
+    end
+
+    describe 'attribute limit' do
+      let(:book) { ActiveExplorer::Exploration.new(author.books.first, attribute_limit: 3).get_hash }
+      let(:author_of_book) { book[:subobjects].first }
+      let(:review) { book[:subobjects].second }
+
+      it 'shows only first couple of attributes' do
+        expect(book[:attributes].count).to eq(3)
+        expect(author_of_book[:attributes].count).to eq(3)
+        expect(review[:attributes].count).to eq(3)
       end
     end
 
@@ -448,6 +460,32 @@ describe ActiveExplorer do
         end
       end
 
+      context 'when attribute limit is set' do
+        context 'and is 3' do
+          let(:graph) { ActiveExplorer::Exploration.new(author, attribute_limit: 3).to_image target_file("attribute_limit_3.png") }
+
+          it 'exports only first couple of attributes' do
+
+            graph.each_node do |name, node|
+              expect(node[:label].to_s.scan(/\\n/).count).to eq(4) # There are 3 lines of attribute names with 2 new line chars and 3 of attribute values also with 2 new line chars
+            end
+          end
+        end
+
+        context 'and is 10 (covers all attributes)' do
+          let(:exploration) { ActiveExplorer::Exploration.new(author, attribute_limit: 10) }
+          let(:graph) { exploration.to_image target_file("attribute_limit_10.png") }
+
+          it 'exports all attributes of author' do
+            graph = ActiveExplorer::Exploration.new(author, attribute_limit: 10).to_image target_file("attribute_limit_10.png")
+
+            author_hash = exploration.get_hash
+            author_node_name = "#{author_hash[:class_name]}_#{author_hash[:attributes][:id]}"
+
+            expect(graph.search_node(author_node_name)[:label].to_s.scan(/\\n/).count).to eq(8) # This means 5 lines ;)
+          end
+        end
+      end
     end
 
     describe 'its options' do

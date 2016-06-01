@@ -24,7 +24,7 @@ module ActiveExplorer
     # @param depth [Integer]
     #   How deep into the subobjects should the explorere go. Depth 1 is only direct children. Depth 0 returns no children.
     #
-    def initialize(object, depth: 5, class_filter: nil, attribute_filter: nil, association_filter: nil, parent_object: nil)
+    def initialize(object, depth: 5, class_filter: nil, attribute_filter: nil, attribute_limit: nil, association_filter: nil, parent_object: nil)
       raise TypeError, "Parameter 'class_filter' must be Array or Hash but is #{class_filter.class}." unless class_filter.nil? || class_filter.is_a?(Array) || class_filter.is_a?(Hash)
       raise TypeError, "Parameter 'association_filter' must be Array but is #{association_filter.class}." unless association_filter.nil? || association_filter.is_a?(Array)
       raise TypeError, "Parameter 'association_filter' must only contain values #{ASSOCIATION_FILTER_VALUES.to_s[1..-2]}." unless association_filter.nil? || association_filter.empty? || (association_filter & ASSOCIATION_FILTER_VALUES).any?
@@ -33,6 +33,7 @@ module ActiveExplorer
       @depth = depth
       @parent_object = parent_object
 
+      @attribute_limit = attribute_limit
       @attribute_filter = attribute_filter || ActiveExplorer::Config.attribute_filter
 
       @hash = { class_name: make_safe(@object.class.name),
@@ -57,14 +58,17 @@ module ActiveExplorer
     end
 
     def attributes
-      return @object.attributes.symbolize_keys if @attribute_filter.nil?
+      attrs = @object.attributes.symbolize_keys
+      attrs = attrs.first(@attribute_limit).to_h if @attribute_limit
+
+      return attrs if @attribute_filter.nil?
 
       filter = @attribute_filter[@object.class.name.downcase.pluralize.to_sym]
 
       if filter
-        @object.attributes.symbolize_keys.select { |key| filter.include?(key) }
+        attrs.select { |key| filter.include?(key) }
       else
-        @object.attributes.symbolize_keys
+        attrs
       end
     end
 
@@ -137,6 +141,7 @@ module ActiveExplorer
                       depth: @depth - 1,
                       class_filter: @class_filter,
                       attribute_filter: @attribute_filter,
+                      attribute_limit: @attribute_limit,
                       association_filter: association_filter,
                       parent_object: parent_object
     end

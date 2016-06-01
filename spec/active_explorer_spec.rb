@@ -17,6 +17,7 @@ describe ActiveExplorer do
   # end
 
   let(:author) { create :author_of_books }
+  let(:lendee) { create :lendee }
 
   it 'exports all objects' do
     exploration = ActiveExplorer::Exploration.new author, association_filter: [:all]
@@ -47,7 +48,7 @@ describe ActiveExplorer do
 
   describe 'object parameters' do
     it 'has class_name' do
-      exploration_hash = ActiveExplorer::Exploration.new( author, association_filter: [:all]).get_hash
+      exploration_hash = ActiveExplorer::Exploration.new(author, association_filter: [:all]).get_hash
 
       expect(exploration_hash).to have_key(:class_name)
     end
@@ -91,7 +92,6 @@ describe ActiveExplorer do
 
         context 'when limiting depth is set' do
           let(:books) { ActiveExplorer::Exploration.new(author, class_filter: [:books, :reviews], depth: 1).get_hash[:subobjects] }
-          # let(:review) { books.first[:subobjects].first }
 
           it 'shows only books' do
             expect(books).not_to be_empty
@@ -381,7 +381,7 @@ describe ActiveExplorer do
   describe 'output to image' do
     describe 'its basic features' do
       it 'creates file' do
-        file = target_file("mindmap_save_test.png")
+        file = target_file("exploration_save_test.png")
 
         ActiveExplorer::Exploration.new(author, association_filter: [:all]).to_image file
 
@@ -398,6 +398,15 @@ describe ActiveExplorer do
         ActiveExplorer::Exploration.new(author).to_image file
 
         expect(File).to exist(file), "File #{file} doesn't exist."
+      end
+
+      it 'does not duplicate edges in complex graphs' do
+        file = target_file("through_associations_test.png")
+
+        graph = ActiveExplorer::Exploration.new(lendee, depth: 10, association_filter: [:all]).to_image file
+
+        expect(graph.node_count).to eq(8)
+        expect(graph.edge_count).to eq(12) # This includes 2 "has many through" associations that are in mutual direction.
       end
     end
 

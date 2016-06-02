@@ -214,6 +214,7 @@ describe ActiveExplorer do
       expect(ActiveExplorer::Config).to respond_to(:class_filter, :class_filter=)
       expect(ActiveExplorer::Config).to respond_to(:attribute_filter, :attribute_filter=)
       expect(ActiveExplorer::Config).to respond_to(:association_filter, :association_filter=)
+      expect(ActiveExplorer::Config).to respond_to(:attribute_limit, :attribute_limit=)
     end
 
     describe 'class filter' do
@@ -339,6 +340,30 @@ describe ActiveExplorer do
         end
       end
     end
+
+    describe 'attribute limit' do
+
+      context 'when limit is 3' do
+        before :all do
+          ActiveExplorer::Config.attribute_limit = 3
+        end
+
+        after :all do
+          ActiveExplorer::Config.attribute_limit = nil
+        end
+
+        let(:book) { ActiveExplorer::Exploration.new(author.books.first).get_hash }
+        let(:author_of_book) { book[:subobjects].first }
+        let(:review) { book[:subobjects].second }
+
+        it 'forces max. 3 attributes' do
+          expect(book[:attributes].count).to eq(3)
+          expect(author_of_book[:attributes].count).to eq(3)
+          expect(review[:attributes].count).to eq(3)
+        end
+      end
+    end
+
   end
 
   describe 'error handling' do

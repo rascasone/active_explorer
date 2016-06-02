@@ -33,7 +33,7 @@ module ActiveExplorer
       @depth = depth
       @parent_object = parent_object
 
-      @attribute_limit = attribute_limit
+      @attribute_limit = attribute_limit || ActiveExplorer::Config.attribute_limit
       @attribute_filter = attribute_filter || ActiveExplorer::Config.attribute_filter
 
       @hash = { class_name: make_safe(@object.class.name),

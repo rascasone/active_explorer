@@ -1,6 +1,6 @@
 require 'rspec'
 require 'active_record'
-require 'mindmapper'
+require 'active_explorer'
 require 'factory_girl'
 
 require_relative 'support/factory_girl'
@@ -10,7 +10,7 @@ Dir["./spec/support/factories/*"].each {|file| require file }
 
 ActiveRecord::Base.establish_connection(
     :adapter  => 'mysql',
-    :database => 'mindmapper_test',
+    :database => 'active_explorer_test',
     :username => 'root',
     :password => 'root',
     :host     => 'localhost')

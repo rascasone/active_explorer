@@ -8,11 +8,24 @@ Active Explorer is a Ruby gem for visualization of run-time data and association
 
 How the gem works? It simply looks for `has_many`, `has_one` and `belongs_to` associations 
 and traverse through them to associated objects. Then it does the same with them until it explores all the surroundings.
-It then prints nice graph represantation to image file (or simple output to console).
+
+It then prints nice graph represantation:
+
+- to image file or
+- to console
 
 One picture is worth a thousand words:
 
-TODO: Add that picture ;)
+![Display hierarchy for Author object.](docs/images/author_books_reviews.png)
+
+And the same objects in console output:
+
+```ruby
+Author(1592) {:first_name=>"Perer", :last_name=>"Brett"}
+  -> has Book(1642) {:author_id=>1592, :title=>"The Warded Man", :year=>2008}
+      -> has Review(796) {:stars=>5, :text=>"Very nice book. Life changing experience.", :book_id=>1642}
+  -> has Book(1643) {:author_id=>1592, :title=>"The Desert Spear", :year=>2010}
+```
 
 ## Installation
 
@@ -51,7 +64,7 @@ exf my_object # Prints output as a graph to image file
 
 Note: `ex` is abbreviation for `explore` and `exf` for `explore_to_file` methods.
 
-See [Examples](#Examples) (or test cases) for more examples.
+See [Examples](#examples) (or test cases) for more examples.
 
 ## Configuration
 
@@ -85,9 +98,9 @@ ex Author.first, class_filter: [:books, :reviews],
 
 Important: Use **plural form** of your classes.
 
-See [Examples](#Examples) (or test cases) see exact usage.
+See [Examples](#examples) (or test cases) see exact usage.
 
-Check [Global Configuration](#Global) to easily set this filter once for all future calls.
+Check [Global Configuration](#global-configuration) to easily set this filter once for all future calls.
 
 ### Global Configuration
 
@@ -219,9 +232,19 @@ $ rake db:create db:migrate RAILS_ENV=test
 - Interactive graph.
 - Rubymine plugin ;)
 
+## Known Issues
+
+### Timeout in Debugger
+
+When calling `exf` during debugging session in Rubymine, gem returns timeout error. Apart from this message everything works. The image gets saved and it is saved far before the timeout appears.
+
+It seems that it has something to do with Ruby GraphViz gem.
+
+If you have any hint on this please contact me.
+
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/active-explorer. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/rascasone/active_explorer. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
 
 
 ## License

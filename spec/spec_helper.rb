@@ -2,6 +2,7 @@ require 'rspec'
 require 'active_record'
 require 'active_explorer'
 require 'factory_girl'
+require 'pry'
 
 require_relative 'support/factory_girl'
 

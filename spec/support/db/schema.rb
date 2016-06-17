@@ -27,25 +27,20 @@ ActiveRecord::Schema.define(version: 20160530165651) do
   end
 
   create_table "books", force: :cascade do |t|
-    t.integer  "author_id",  limit: 4
+    t.references :author, index: true
     t.string   "title",      limit: 255
     t.integer  "year",       limit: 4
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  add_index "books", ["author_id"], name: "fk_rails_53d51ce16a", using: :btree
-
   create_table "lendings", force: :cascade do |t|
-    t.integer  "person_id",  limit: 4
-    t.integer  "book_id",    limit: 4
+    t.references :person, index: true
+    t.references :book, index: true
     t.string   "state",      limit: 255
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
   end
-
-  add_index "lendings", ["book_id"], name: "fk_rails_697c378ebf", using: :btree
-  add_index "lendings", ["person_id"], name: "fk_rails_d9c37a22a6", using: :btree
 
   create_table "people", force: :cascade do |t|
     t.string   "first_name", limit: 255
@@ -55,20 +50,12 @@ ActiveRecord::Schema.define(version: 20160530165651) do
   end
 
   create_table "reviews", force: :cascade do |t|
+    t.references :author, index: true
+    t.references :book, index: true
     t.integer  "stars",      limit: 4
     t.text     "text",       limit: 65535
     t.datetime "created_at",               null: false
     t.datetime "updated_at",               null: false
-    t.integer  "book_id",    limit: 4
-    t.integer  "author_id",  limit: 4
   end
 
-  add_index "reviews", ["author_id"], name: "index_reviews_on_author_id", using: :btree
-  add_index "reviews", ["book_id"], name: "index_reviews_on_book_id", using: :btree
-
-  add_foreign_key "books", "authors", on_delete: :nullify
-  add_foreign_key "lendings", "books"
-  add_foreign_key "lendings", "people"
-  add_foreign_key "reviews", "authors"
-  add_foreign_key "reviews", "books"
-end
+ end

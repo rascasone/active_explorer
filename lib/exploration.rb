@@ -125,7 +125,7 @@ module ActiveExplorer
       subobjects.present? ? subobjects : nil
 
     rescue NameError, ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
-      association_type = is_has_many_association?(association) ? 'has_many' : 'belongs_to'
+      association_type = association.macro
       add_error_hash("#{e.message} in #{association_type} :#{association.name}")
       nil
     end
@@ -182,15 +182,7 @@ module ActiveExplorer
     end
 
     def association_type(association)
-      if association.is_a?(ActiveRecord::Reflection::HasManyReflection) ||
-          association.is_a?(ActiveRecord::Reflection::ThroughReflection) ||
-          association.is_a?(ActiveRecord::Reflection::HasAndBelongsToManyReflection)
-        :has_many
-      elsif association.is_a?(ActiveRecord::Reflection::HasOneReflection)
-        :has_one
-      elsif association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
-        :belongs_to
-      end
+      association.macro
     end
 
     def make_short(text)
@@ -206,18 +198,6 @@ module ActiveExplorer
 
     def each_val_to_s(array)
       array.collect { |a| a.to_s }
-    end
-
-    def is_belongs_to_association?(association)
-      association.is_a?(ActiveRecord::Reflection::BelongsToReflection)
-    end
-
-    def is_has_many_association?(association)
-      association.is_a?(ActiveRecord::Reflection::HasManyReflection)
-    end
-
-    def is_has_one_association?(association)
-      association.is_a?(ActiveRecord::Reflection::HasOneReflection)
     end
 
     def is_parent?(object)

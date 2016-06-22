@@ -75,7 +75,7 @@ module ActiveExplorer
     end
 
     def get_hash
-      @hash.deep_dup
+      @hash.dup
     end
 
     def to_console

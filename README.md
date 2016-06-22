@@ -1,8 +1,12 @@
 # Active Explorer
 
-Active Explorer is a Ruby gem for visualization of run-time data and associations represented by Active Record.
+Active Explorer is a Ruby gem for visualization of run-time data and associations represented by Active Record. It **prints your object data** with all **associated objects** in a nice way and **with one command**.
 
-**NOTE: Only Active Record 4.2.x is currently supported. More versions comming next week. Come back soon ;)** 
+You can think of it:
+* as "[awesome_print](https://github.com/awesome-print/awesome_print) with associations" (in console mode) and
+* as "[railroady](https://github.com/preston/railroady) for runtime data" (in image graph version).
+
+**NOTE: Only Active Record 4.x and 5.x is supported.**
 
 **NOTE: This is pre-alpha version. Many things might change.** 
 
@@ -17,6 +21,8 @@ It then prints nice graph represantation:
 One picture is worth a thousand words:
 
 ![Display hierarchy for Author object.](docs/images/author_books_reviews.png)
+
+(GraphViz software needs to be installed on the system for this to work. See [Graphviz Installation](#graphviz-installation).)
 
 And the same objects in console output:
 
@@ -46,6 +52,16 @@ Or install it yourself as:
 ```
 $ gem install active_explorer
 ```
+
+### Graphviz Installation
+
+You need to have GraphViz software installed on your system.
+
+On Mac: `brew install graphviz`
+
+On Ubuntu: `sudo apt-get install graphviz`
+
+On other systems please take a look at official pages [http://www.graphviz.org/](http://www.graphviz.org/) or Google for it.
 
 ## Usage
 
@@ -208,11 +224,26 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
+### Appraisals
+
+To test support of many different versions I use [Appraisal gem](https://github.com/thoughtbot/appraisal) that allows me to define several different Gemfiles and test them all at once.
+
+See `Appraisals` file.
+
+Usage:
+
+1. Install gems by calling `appraisal install` (or `appraisal update` to update them)
+2. Run tests by calling `appraisal rspec` (or call specific version `appraisal activerecord-4-2 rspec`)
+
+Everything should be green ;)
+
 ## TODO
 
 - Bug hunt.
-- Support all versions of Active Record >= 3.0.x
+- Colorize console output.
 - Export to yuml.me graphing website.
+- Export to SVG.
+- Export to DOT language.
 - Interactive graph.
 - Rubymine plugin ;)
 
@@ -230,6 +261,13 @@ If you have any hint on this please contact me.
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/rascasone/active_explorer. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
 
+## Credits
+
+<p>
+    <img src="docs/images/logo_rascasone_blue_on_white.png" width="160">
+</p>
+
+Active Explorer is maintained by [rascasone.com](http://www.rascasone.com)
 
 ## License
 

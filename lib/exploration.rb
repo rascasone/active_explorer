@@ -43,8 +43,10 @@ module ActiveExplorer
         @class_filter = class_filter || ActiveExplorer::Config.class_filter
         @class_filter = { show: @class_filter } if @class_filter.is_a?(Array)
 
-        [:show, :ignore].each do |group|
-          @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
+        if @class_filter
+          [:show, :ignore].each do |group|
+            @class_filter[group] = @class_filter[group].present? ? each_val_to_s(@class_filter[group]) : []
+          end
         end
 
         @association_filter = association_filter || ActiveExplorer::Config.association_filter
